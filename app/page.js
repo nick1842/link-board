@@ -42,18 +42,13 @@ async function compressImage(file, maxWidth = 1600, quality = 0.75) {
 
       canvas.toBlob(
         (blob) => {
-          if (!blob) {
-            reject(new Error("Image compression failed."));
-            return;
-          }
+          if (!blob) return reject(new Error("Image compression failed."));
 
-          const compressedFile = new File(
-            [blob],
-            file.name.replace(/\.[^/.]+$/, "") + ".jpg",
-            { type: "image/jpeg" }
+          resolve(
+            new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", {
+              type: "image/jpeg",
+            })
           );
-
-          resolve(compressedFile);
         },
         "image/jpeg",
         quality
@@ -94,7 +89,9 @@ export default function Home() {
   const [newAlbum, setNewAlbum] = useState("");
   const [photoAlbumId, setPhotoAlbumId] = useState("");
   const [photoCaption, setPhotoCaption] = useState("");
-  const [photoFile, setPhotoFile] = useState(null);
+  const [photoFiles, setPhotoFiles] = useState([]);
+  const [selectedAlbum, setSelectedAlbum] = useState("ALL");
+  const [openPhotoMenu, setOpenPhotoMenu] = useState(null);
 
   const [uploadingLinkImage, setUploadingLinkImage] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -121,9 +118,6 @@ export default function Home() {
 
     const compressedFile = await compressImage(file);
     const fileName = safeFileName(compressedFile);
-
-    console.log("Original size MB:", (file.size / 1024 / 1024).toFixed(2));
-    console.log("Compressed size MB:", (compressedFile.size / 1024 / 1024).toFixed(2));
 
     const { error } = await supabase.storage
       .from(bucket)
@@ -157,7 +151,6 @@ export default function Home() {
     });
 
     if (error) {
-      console.error("Error creating category:", error);
       alert("There was an error creating the category.");
       return;
     }
@@ -204,7 +197,6 @@ export default function Home() {
     setUploadingLinkImage(false);
 
     if (error) {
-      console.error("Error saving link:", error);
       alert("There was an error saving the link.");
       return;
     }
@@ -222,15 +214,7 @@ export default function Home() {
 
   async function deleteLink(linkId) {
     if (!confirm("Delete this link?")) return;
-
-    const { error } = await supabase.from("links").delete().eq("id", linkId);
-
-    if (error) {
-      console.error("Error deleting link:", error);
-      alert("There was an error deleting the link.");
-      return;
-    }
-
+    await supabase.from("links").delete().eq("id", linkId);
     loadLinks();
   }
 
@@ -238,31 +222,19 @@ export default function Home() {
     const newName = prompt("Enter a new name:", link.custom_name || link.title || "");
     if (newName === null) return;
 
-    const { error } = await supabase
+    await supabase
       .from("links")
       .update({ custom_name: newName.trim() || null })
       .eq("id", link.id);
-
-    if (error) {
-      console.error("Error editing link:", error);
-      alert("There was an error editing the link name.");
-      return;
-    }
 
     loadLinks();
   }
 
   async function changeLinkCategory(linkId, newCategoryId) {
-    const { error } = await supabase
+    await supabase
       .from("links")
       .update({ category_id: newCategoryId || null })
       .eq("id", linkId);
-
-    if (error) {
-      console.error("Error changing category:", error);
-      alert("There was an error changing the category.");
-      return;
-    }
 
     loadLinks();
   }
@@ -270,30 +242,23 @@ export default function Home() {
   async function addReaction(linkId, emoji) {
     const visitorId = localStorage.getItem("visitor_id");
 
-    const { error } = await supabase.from("reactions").insert({
+    await supabase.from("reactions").insert({
       link_id: linkId,
       emoji,
       visitor_id: visitorId,
     });
 
-    if (error) console.error("Error adding reaction:", error);
     loadLinks();
   }
 
   async function addComment(linkId, text) {
     if (!text.trim()) return;
 
-    const { error } = await supabase.from("comments").insert({
+    await supabase.from("comments").insert({
       link_id: linkId,
       guest_name: guestName.trim() || "Anonymous",
       comment: text.trim(),
     });
-
-    if (error) {
-      console.error("Error adding comment:", error);
-      alert("There was an error adding the comment.");
-      return;
-    }
 
     loadLinks();
   }
@@ -316,7 +281,6 @@ export default function Home() {
     });
 
     if (error) {
-      console.error("Error creating album:", error);
       alert("There was an error creating the album.");
       return;
     }
@@ -328,7 +292,7 @@ export default function Home() {
   async function loadPhotos() {
     const { data, error } = await supabase
       .from("photos")
-      .select("*, albums(*)")
+      .select("*, albums(*), photo_albums(*, albums(*))")
       .order("created_at", { ascending: false });
 
     if (error) return console.error("Error loading photos:", error);
@@ -336,35 +300,42 @@ export default function Home() {
   }
 
   async function uploadPhoto() {
-    if (!photoFile) {
-      alert("Choose a photo first.");
+    if (photoFiles.length === 0) {
+      alert("Choose at least one photo first.");
       return;
     }
 
     setUploadingPhoto(true);
 
-    const uploadedPhotoUrl = await uploadToBucket("photos", photoFile);
+    for (const file of photoFiles) {
+      const uploadedPhotoUrl = await uploadToBucket("photos", file);
+      if (!uploadedPhotoUrl) continue;
 
-    if (!uploadedPhotoUrl) {
-      setUploadingPhoto(false);
-      return;
+      const { data: newPhoto, error } = await supabase
+        .from("photos")
+        .insert({
+          image_url: uploadedPhotoUrl,
+          caption: photoCaption.trim() || null,
+          album_id: photoAlbumId || null,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Photo save error:", error);
+        continue;
+      }
+
+      if (photoAlbumId) {
+        await supabase.from("photo_albums").insert({
+          photo_id: newPhoto.id,
+          album_id: photoAlbumId,
+        });
+      }
     }
-
-    const { error } = await supabase.from("photos").insert({
-      image_url: uploadedPhotoUrl,
-      caption: photoCaption.trim() || null,
-      album_id: photoAlbumId || null,
-    });
 
     setUploadingPhoto(false);
-
-    if (error) {
-      console.error("Photo save error:", error);
-      alert("There was an error saving the photo.");
-      return;
-    }
-
-    setPhotoFile(null);
+    setPhotoFiles([]);
     setPhotoCaption("");
     setPhotoAlbumId("");
 
@@ -377,15 +348,54 @@ export default function Home() {
   async function deletePhoto(photoId) {
     if (!confirm("Delete this photo?")) return;
 
-    const { error } = await supabase.from("photos").delete().eq("id", photoId);
+    await supabase.from("photos").delete().eq("id", photoId);
+    setOpenPhotoMenu(null);
+    loadPhotos();
+  }
 
-    if (error) {
-      console.error("Error deleting photo:", error);
-      alert("There was an error deleting the photo.");
+  async function addPhotoToAlbum(photoId) {
+    if (albums.length === 0) {
+      alert("Create an album first.");
       return;
     }
 
+    const albumList = albums
+      .map((album, index) => `${index + 1}. ${album.name}`)
+      .join("\n");
+
+    const choice = prompt(`Choose an album number:\n\n${albumList}`);
+    if (!choice) return;
+
+    const selected = albums[Number(choice) - 1];
+
+    if (!selected) {
+      alert("Invalid album number.");
+      return;
+    }
+
+    const { error } = await supabase.from("photo_albums").insert({
+      photo_id: photoId,
+      album_id: selected.id,
+    });
+
+    if (error) {
+      alert("That photo may already be in that album.");
+      return;
+    }
+
+    setOpenPhotoMenu(null);
     loadPhotos();
+  }
+
+  function downloadPhoto(photo) {
+    const link = document.createElement("a");
+    link.href = photo.image_url;
+    link.download = photo.caption || "photo";
+    link.target = "_blank";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setOpenPhotoMenu(null);
   }
 
   const filteredLinks = links.filter((link) => {
@@ -400,6 +410,13 @@ export default function Home() {
     return allText.includes(search.toLowerCase());
   });
 
+  const filteredPhotos =
+    selectedAlbum === "ALL"
+      ? photos
+      : photos.filter((photo) =>
+          photo.photo_albums?.some((pa) => pa.album_id === selectedAlbum)
+        );
+
   return (
     <main className="page">
       <header className="hero">
@@ -409,6 +426,7 @@ export default function Home() {
 
       <DropdownSection title="Add a Link" defaultOpen={true}>
         <h2>Add a Link</h2>
+
         <div className="form">
           <input
             value={customName}
@@ -446,6 +464,7 @@ export default function Home() {
 
       <DropdownSection title="Create Category">
         <h2>Create Category</h2>
+
         <div className="form">
           <input
             value={newCategory}
@@ -458,6 +477,7 @@ export default function Home() {
 
       <DropdownSection title="Search Links" defaultOpen={true}>
         <h2>Search Links</h2>
+
         <input
           className="fullInput"
           value={search}
@@ -468,6 +488,7 @@ export default function Home() {
 
       <DropdownSection title="Create Album">
         <h2>Create Album</h2>
+
         <div className="form">
           <input
             value={newAlbum}
@@ -478,48 +499,95 @@ export default function Home() {
         </div>
       </DropdownSection>
 
-      <DropdownSection title="Upload Photo">
-        <h2>Upload Photo</h2>
+      <DropdownSection title="Upload Photos">
+        <h2>Upload Photos</h2>
+
         <div className="form">
           <input
             id="photoUploadInput"
             type="file"
             accept="image/*"
-            onChange={(e) => setPhotoFile(e.target.files[0])}
+            multiple
+            onChange={(e) => setPhotoFiles(Array.from(e.target.files))}
           />
 
           <input
             value={photoCaption}
             onChange={(e) => setPhotoCaption(e.target.value)}
-            placeholder="Optional photo caption"
+            placeholder="Optional caption for all selected photos"
           />
 
           <select value={photoAlbumId} onChange={(e) => setPhotoAlbumId(e.target.value)}>
-            <option value="">No album</option>
+            <option value="">Only ALL album</option>
             {albums.map((album) => (
               <option key={album.id} value={album.id}>
-                {album.name}
+                Also add to {album.name}
               </option>
             ))}
           </select>
 
           <button onClick={uploadPhoto} disabled={uploadingPhoto}>
-            {uploadingPhoto ? "Compressing & Uploading..." : "Upload Photo"}
+            {uploadingPhoto
+              ? "Compressing & Uploading..."
+              : `Upload ${photoFiles.length > 1 ? photoFiles.length + " Photos" : "Photo"}`}
           </button>
         </div>
       </DropdownSection>
 
       <DropdownSection title="Photo Albums">
         <h2>Photo Albums</h2>
+
+        <select
+          className="fullInput"
+          value={selectedAlbum}
+          onChange={(e) => setSelectedAlbum(e.target.value)}
+        >
+          <option value="ALL">ALL</option>
+          {albums.map((album) => (
+            <option key={album.id} value={album.id}>
+              {album.name}
+            </option>
+          ))}
+        </select>
+
         <div className="photoGrid">
-          {photos.map((photo) => (
+          {filteredPhotos.map((photo) => (
             <div className="photoCard" key={photo.id}>
+              <div className="photoMenuWrap">
+                <button
+                  className="photoMenuButton"
+                  onClick={() =>
+                    setOpenPhotoMenu(openPhotoMenu === photo.id ? null : photo.id)
+                  }
+                >
+                  ⋯
+                </button>
+
+                {openPhotoMenu === photo.id && (
+                  <div className="photoMenu">
+                    <button onClick={() => downloadPhoto(photo)}>Download</button>
+                    <button onClick={() => addPhotoToAlbum(photo.id)}>
+                      Add to Album
+                    </button>
+                    <button className="deleteBtn" onClick={() => deletePhoto(photo.id)}>
+                      Delete
+                    </button>
+                  </div>
+                )}
+              </div>
+
               <img src={photo.image_url} alt="" />
+
               <p>{photo.caption || "No caption"}</p>
-              <span>{photo.albums?.name || "No album"}</span>
-              <button className="deleteBtn" onClick={() => deletePhoto(photo.id)}>
-                Delete Photo
-              </button>
+
+              <span>
+                Albums:{" "}
+                {photo.photo_albums?.length
+                  ? ["ALL", ...photo.photo_albums.map((pa) => pa.albums?.name)].join(
+                      ", "
+                    )
+                  : "ALL"}
+              </span>
             </div>
           ))}
         </div>

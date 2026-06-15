@@ -52,7 +52,8 @@ flex-wrap: wrap;
 }
 
 input,
-select {
+select,
+textarea {
 padding: 12px;
 border: 1px solid #343a4a;
 border-radius: 10px;
@@ -66,7 +67,8 @@ input[type="file"] {
 cursor: pointer;
 }
 
-input::placeholder {
+input::placeholder,
+textarea::placeholder {
 color: #8d94a6;
 }
 
@@ -111,7 +113,6 @@ aspect-ratio: 16 / 9;
 object-fit: cover;
 border-radius: 14px;
 margin-bottom: 12px;
-background: #090b11;
 }
 
 .cardTop {
@@ -155,7 +156,6 @@ background: #991b1b !important;
 
 .card h2 {
 font-size: 21px;
-margin-bottom: 8px;
 }
 
 .card p {
@@ -188,11 +188,6 @@ flex-wrap: wrap;
 
 .reactions button {
 background: #262b3a;
-color: white;
-}
-
-.reactions button:hover {
-background: #343b50;
 }
 
 .comments {
@@ -201,21 +196,14 @@ border-top: 1px solid #2a2f3d;
 padding-top: 12px;
 }
 
-.comments h3 {
-margin-top: 0;
-}
-
 .comments input {
 width: 100%;
-margin-top: 8px;
-margin-bottom: 8px;
+margin: 8px 0;
 }
 
 .emptyText {
 color: #8d94a6 !important;
 }
-
-/* PHOTO ALBUMS */
 
 .photoGrid {
 display: grid;
@@ -224,6 +212,7 @@ gap: 14px;
 }
 
 .photoCard {
+position: relative;
 background: #090b11;
 border: 1px solid #2a2f3d;
 border-radius: 16px;
@@ -232,28 +221,54 @@ padding: 12px;
 
 .photoCard img {
 width: 100%;
-aspect-ratio: 1 / 1;
+aspect-ratio: 1/1;
 object-fit: cover;
 border-radius: 12px;
 margin-bottom: 10px;
 }
 
 .photoCard p {
-color: #f4f4f5;
 margin-bottom: 6px;
 }
 
 .photoCard span {
 display: block;
 color: #c4b5fd;
-margin-bottom: 10px;
+font-size: 13px;
 }
 
-.photoCard button {
+.photoMenuWrap {
+position: absolute;
+bottom: 10px;
+right: 10px;
+}
+
+.photoMenuButton {
+width: 40px;
+height: 40px;
+border-radius: 999px;
+padding: 0;
+background: rgba(0, 0, 0, 0.8);
+}
+
+.photoMenu {
+position: absolute;
+right: 0;
+bottom: 50px;
+background: #171a23;
+border: 1px solid #2a2f3d;
+border-radius: 12px;
+padding: 8px;
+min-width: 160px;
+display: flex;
+flex-direction: column;
+gap: 6px;
+z-index: 100;
+}
+
+.photoMenu button {
 width: 100%;
 }
-
-/* MOBILE DROPDOWNS */
 
 .dropdownPanel {
 margin-bottom: 14px;
@@ -281,7 +296,6 @@ background: #11141d;
 border: 1px solid #2a2f3d;
 border-radius: 16px;
 overflow: hidden;
-margin-bottom: 14px;
 }
 
 .dropdownPanel summary {
@@ -290,11 +304,7 @@ padding: 16px;
 font-weight: bold;
 cursor: pointer;
 background: #171a23;
-color: #f4f4f5;
-}
-
-.dropdownPanel summary::marker {
-color: #a78bfa;
+color: white;
 }
 
 .dropdownPanel .panel {
