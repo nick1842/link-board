@@ -10,6 +10,11 @@ function cleanUrl(url) {
     : `https://${url}`;
 }
 
+function safeFileName(file) {
+  const cleanName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "-");
+  return `${Date.now()}-${crypto.randomUUID()}-${cleanName}`;
+}
+
 export default function Home() {
   const [url, setUrl] = useState("");
   const [customName, setCustomName] = useState("");
@@ -19,6 +24,14 @@ export default function Home() {
   const [categories, setCategories] = useState([]);
   const [guestName, setGuestName] = useState("");
   const [search, setSearch] = useState("");
+  const [linkImageFile, setLinkImageFile] = useState(null);
+
+  const [albums, setAlbums] = useState([]);
+  const [photos, setPhotos] = useState([]);
+  const [newAlbum, setNewAlbum] = useState("");
+  const [photoAlbumId, setPhotoAlbumId] = useState("");
+  const [photoCaption, setPhotoCaption] = useState("");
+  const [photoFile, setPhotoFile] = useState(null);
 
   useEffect(() => {
     loadEverything();
@@ -33,6 +46,27 @@ export default function Home() {
   async function loadEverything() {
     await loadCategories();
     await loadLinks();
+    await loadAlbums();
+    await loadPhotos();
+  }
+
+  async function uploadToBucket(bucket, file) {
+    if (!file) return null;
+
+    const fileName = safeFileName(file);
+
+    const { error } = await supabase.storage
+      .from(bucket)
+      .upload(fileName, file);
+
+    if (error) {
+      console.error("Upload error:", error);
+      alert("Image upload failed.");
+      return null;
+    }
+
+    const { data } = supabase.storage.from(bucket).getPublicUrl(fileName);
+    return data.publicUrl;
   }
 
   async function loadCategories() {
@@ -47,20 +81,6 @@ export default function Home() {
     }
 
     setCategories(data || []);
-  }
-
-  async function loadLinks() {
-    const { data, error } = await supabase
-      .from("links")
-      .select("*, categories(*), comments(*), reactions(*)")
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      console.error("Error loading links:", error);
-      return;
-    }
-
-    setLinks(data || []);
   }
 
   async function createCategory() {
@@ -80,6 +100,20 @@ export default function Home() {
     loadCategories();
   }
 
+  async function loadLinks() {
+    const { data, error } = await supabase
+      .from("links")
+      .select("*, categories(*), comments(*), reactions(*)")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error loading links:", error);
+      return;
+    }
+
+    setLinks(data || []);
+  }
+
   async function saveLink() {
     if (!url.trim()) return;
 
@@ -91,6 +125,7 @@ export default function Home() {
     });
 
     const preview = await previewRes.json();
+    const uploadedImageUrl = await uploadToBucket("link-images", linkImageFile);
 
     const { error } = await supabase.from("links").insert({
       url: finalUrl,
@@ -99,6 +134,7 @@ export default function Home() {
       title: preview.title,
       description: preview.description,
       image: preview.image,
+      custom_image: uploadedImageUrl,
     });
 
     if (error) {
@@ -110,6 +146,11 @@ export default function Home() {
     setUrl("");
     setCustomName("");
     setCategoryId("");
+    setLinkImageFile(null);
+
+    const fileInput = document.getElementById("linkImageInput");
+    if (fileInput) fileInput.value = "";
+
     loadLinks();
   }
 
@@ -170,9 +211,7 @@ export default function Home() {
       visitor_id: visitorId,
     });
 
-    if (error) {
-      console.error("Error adding reaction:", error);
-    }
+    if (error) console.error("Error adding reaction:", error);
 
     loadLinks();
   }
@@ -195,6 +234,97 @@ export default function Home() {
     loadLinks();
   }
 
+  async function loadAlbums() {
+    const { data, error } = await supabase
+      .from("albums")
+      .select("*")
+      .order("name", { ascending: true });
+
+    if (error) {
+      console.error("Error loading albums:", error);
+      return;
+    }
+
+    setAlbums(data || []);
+  }
+
+  async function createAlbum() {
+    if (!newAlbum.trim()) return;
+
+    const { error } = await supabase.from("albums").insert({
+      name: newAlbum.trim(),
+    });
+
+    if (error) {
+      console.error("Error creating album:", error);
+      alert("There was an error creating the album.");
+      return;
+    }
+
+    setNewAlbum("");
+    loadAlbums();
+  }
+
+  async function loadPhotos() {
+    const { data, error } = await supabase
+      .from("photos")
+      .select("*, albums(*)")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error loading photos:", error);
+      return;
+    }
+
+    setPhotos(data || []);
+  }
+
+  async function uploadPhoto() {
+    if (!photoFile) {
+      alert("Choose a photo first.");
+      return;
+    }
+
+    const uploadedPhotoUrl = await uploadToBucket("photos", photoFile);
+    if (!uploadedPhotoUrl) return;
+
+    const { error } = await supabase.from("photos").insert({
+      image_url: uploadedPhotoUrl,
+      caption: photoCaption.trim() || null,
+      album_id: photoAlbumId || null,
+    });
+
+    if (error) {
+      console.error("Photo save error:", error);
+      alert("There was an error saving the photo.");
+      return;
+    }
+
+    setPhotoFile(null);
+    setPhotoCaption("");
+    setPhotoAlbumId("");
+
+    const fileInput = document.getElementById("photoUploadInput");
+    if (fileInput) fileInput.value = "";
+
+    loadPhotos();
+  }
+
+  async function deletePhoto(photoId) {
+    const ok = confirm("Delete this photo?");
+    if (!ok) return;
+
+    const { error } = await supabase.from("photos").delete().eq("id", photoId);
+
+    if (error) {
+      console.error("Error deleting photo:", error);
+      alert("There was an error deleting the photo.");
+      return;
+    }
+
+    loadPhotos();
+  }
+
   const filteredLinks = links.filter((link) => {
     const allText = `
       ${link.custom_name || ""}
@@ -211,7 +341,7 @@ export default function Home() {
     <main className="page">
       <header className="hero">
         <h1>My Link Board</h1>
-        <p>Save links, organize them, search them, and let people react or comment.</p>
+        <p>Save links, upload photos, organize albums, and let people comment.</p>
       </header>
 
       <section className="panel">
@@ -239,6 +369,13 @@ export default function Home() {
             ))}
           </select>
 
+          <input
+            id="linkImageInput"
+            type="file"
+            accept="image/*"
+            onChange={(e) => setLinkImageFile(e.target.files[0])}
+          />
+
           <button onClick={saveLink}>Save Link</button>
         </div>
       </section>
@@ -265,6 +402,69 @@ export default function Home() {
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by name, category, URL, or description"
         />
+      </section>
+
+      <section className="panel">
+        <h2>Create Album</h2>
+
+        <div className="form">
+          <input
+            value={newAlbum}
+            onChange={(e) => setNewAlbum(e.target.value)}
+            placeholder="Example: Vacation, Friends, School"
+          />
+          <button onClick={createAlbum}>Add Album</button>
+        </div>
+      </section>
+
+      <section className="panel">
+        <h2>Upload Photo</h2>
+
+        <div className="form">
+          <input
+            id="photoUploadInput"
+            type="file"
+            accept="image/*"
+            onChange={(e) => setPhotoFile(e.target.files[0])}
+          />
+
+          <input
+            value={photoCaption}
+            onChange={(e) => setPhotoCaption(e.target.value)}
+            placeholder="Optional photo caption"
+          />
+
+          <select value={photoAlbumId} onChange={(e) => setPhotoAlbumId(e.target.value)}>
+            <option value="">No album</option>
+            {albums.map((album) => (
+              <option key={album.id} value={album.id}>
+                {album.name}
+              </option>
+            ))}
+          </select>
+
+          <button onClick={uploadPhoto}>Upload Photo</button>
+        </div>
+      </section>
+
+      <section className="panel">
+        <h2>Photo Albums</h2>
+
+        <div className="photoGrid">
+          {photos.map((photo) => (
+            <div className="photoCard" key={photo.id}>
+              <img src={photo.image_url} alt="" />
+
+              <p>{photo.caption || "No caption"}</p>
+
+              <span>{photo.albums?.name || "No album"}</span>
+
+              <button className="deleteBtn" onClick={() => deletePhoto(photo.id)}>
+                Delete Photo
+              </button>
+            </div>
+          ))}
+        </div>
       </section>
 
       <input
@@ -310,7 +510,9 @@ function LinkCard({
 
   return (
     <div className="card">
-      {link.image && <img src={link.image} alt="" />}
+      {(link.custom_image || link.image) && (
+        <img src={link.custom_image || link.image} alt="" />
+      )}
 
       <div className="cardTop">
         <span className="category">{link.categories?.name || "No category"}</span>
