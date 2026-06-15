@@ -15,6 +15,15 @@ function safeFileName(file) {
   return `${Date.now()}-${crypto.randomUUID()}-${cleanName}`;
 }
 
+function DropdownSection({ title, children, defaultOpen = false }) {
+  return (
+    <details className="dropdownPanel" open={defaultOpen}>
+      <summary>{title}</summary>
+      <section className="panel">{children}</section>
+    </details>
+  );
+}
+
 export default function Home() {
   const [url, setUrl] = useState("");
   const [customName, setCustomName] = useState("");
@@ -55,9 +64,7 @@ export default function Home() {
 
     const fileName = safeFileName(file);
 
-    const { error } = await supabase.storage
-      .from(bucket)
-      .upload(fileName, file);
+    const { error } = await supabase.storage.from(bucket).upload(fileName, file);
 
     if (error) {
       console.error("Upload error:", error);
@@ -75,11 +82,7 @@ export default function Home() {
       .select("*")
       .order("name", { ascending: true });
 
-    if (error) {
-      console.error("Error loading categories:", error);
-      return;
-    }
-
+    if (error) return console.error("Error loading categories:", error);
     setCategories(data || []);
   }
 
@@ -106,11 +109,7 @@ export default function Home() {
       .select("*, categories(*), comments(*), reactions(*)")
       .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error("Error loading links:", error);
-      return;
-    }
-
+    if (error) return console.error("Error loading links:", error);
     setLinks(data || []);
   }
 
@@ -155,8 +154,7 @@ export default function Home() {
   }
 
   async function deleteLink(linkId) {
-    const confirmDelete = confirm("Delete this link?");
-    if (!confirmDelete) return;
+    if (!confirm("Delete this link?")) return;
 
     const { error } = await supabase.from("links").delete().eq("id", linkId);
 
@@ -212,7 +210,6 @@ export default function Home() {
     });
 
     if (error) console.error("Error adding reaction:", error);
-
     loadLinks();
   }
 
@@ -240,11 +237,7 @@ export default function Home() {
       .select("*")
       .order("name", { ascending: true });
 
-    if (error) {
-      console.error("Error loading albums:", error);
-      return;
-    }
-
+    if (error) return console.error("Error loading albums:", error);
     setAlbums(data || []);
   }
 
@@ -271,11 +264,7 @@ export default function Home() {
       .select("*, albums(*)")
       .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error("Error loading photos:", error);
-      return;
-    }
-
+    if (error) return console.error("Error loading photos:", error);
     setPhotos(data || []);
   }
 
@@ -311,8 +300,7 @@ export default function Home() {
   }
 
   async function deletePhoto(photoId) {
-    const ok = confirm("Delete this photo?");
-    if (!ok) return;
+    if (!confirm("Delete this photo?")) return;
 
     const { error } = await supabase.from("photos").delete().eq("id", photoId);
 
@@ -344,128 +332,71 @@ export default function Home() {
         <p>Save links, upload photos, organize albums, and let people comment.</p>
       </header>
 
-      <section className="panel">
+      <DropdownSection title="Add a Link" defaultOpen={true}>
         <h2>Add a Link</h2>
-
         <div className="form">
-          <input
-            value={customName}
-            onChange={(e) => setCustomName(e.target.value)}
-            placeholder="Optional link name"
-          />
-
-          <input
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="Paste a link"
-          />
+          <input value={customName} onChange={(e) => setCustomName(e.target.value)} placeholder="Optional link name" />
+          <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="Paste a link" />
 
           <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
             <option value="">No category</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.name}
-              </option>
-            ))}
+            {categories.map((cat) => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
           </select>
 
-          <input
-            id="linkImageInput"
-            type="file"
-            accept="image/*"
-            onChange={(e) => setLinkImageFile(e.target.files[0])}
-          />
-
+          <input id="linkImageInput" type="file" accept="image/*" onChange={(e) => setLinkImageFile(e.target.files[0])} />
           <button onClick={saveLink}>Save Link</button>
         </div>
-      </section>
+      </DropdownSection>
 
-      <section className="panel">
+      <DropdownSection title="Create Category">
         <h2>Create Category</h2>
-
         <div className="form">
-          <input
-            value={newCategory}
-            onChange={(e) => setNewCategory(e.target.value)}
-            placeholder="Example: School, Music, Videos"
-          />
+          <input value={newCategory} onChange={(e) => setNewCategory(e.target.value)} placeholder="Example: School, Music, Videos" />
           <button onClick={createCategory}>Add Category</button>
         </div>
-      </section>
+      </DropdownSection>
 
-      <section className="panel">
+      <DropdownSection title="Search Links" defaultOpen={true}>
         <h2>Search Links</h2>
+        <input className="fullInput" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name, category, URL, or description" />
+      </DropdownSection>
 
-        <input
-          className="fullInput"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by name, category, URL, or description"
-        />
-      </section>
-
-      <section className="panel">
+      <DropdownSection title="Create Album">
         <h2>Create Album</h2>
-
         <div className="form">
-          <input
-            value={newAlbum}
-            onChange={(e) => setNewAlbum(e.target.value)}
-            placeholder="Example: Vacation, Friends, School"
-          />
+          <input value={newAlbum} onChange={(e) => setNewAlbum(e.target.value)} placeholder="Example: Vacation, Friends, School" />
           <button onClick={createAlbum}>Add Album</button>
         </div>
-      </section>
+      </DropdownSection>
 
-      <section className="panel">
+      <DropdownSection title="Upload Photo">
         <h2>Upload Photo</h2>
-
         <div className="form">
-          <input
-            id="photoUploadInput"
-            type="file"
-            accept="image/*"
-            onChange={(e) => setPhotoFile(e.target.files[0])}
-          />
-
-          <input
-            value={photoCaption}
-            onChange={(e) => setPhotoCaption(e.target.value)}
-            placeholder="Optional photo caption"
-          />
+          <input id="photoUploadInput" type="file" accept="image/*" onChange={(e) => setPhotoFile(e.target.files[0])} />
+          <input value={photoCaption} onChange={(e) => setPhotoCaption(e.target.value)} placeholder="Optional photo caption" />
 
           <select value={photoAlbumId} onChange={(e) => setPhotoAlbumId(e.target.value)}>
             <option value="">No album</option>
-            {albums.map((album) => (
-              <option key={album.id} value={album.id}>
-                {album.name}
-              </option>
-            ))}
+            {albums.map((album) => <option key={album.id} value={album.id}>{album.name}</option>)}
           </select>
 
           <button onClick={uploadPhoto}>Upload Photo</button>
         </div>
-      </section>
+      </DropdownSection>
 
-      <section className="panel">
+      <DropdownSection title="Photo Albums">
         <h2>Photo Albums</h2>
-
         <div className="photoGrid">
           {photos.map((photo) => (
             <div className="photoCard" key={photo.id}>
               <img src={photo.image_url} alt="" />
-
               <p>{photo.caption || "No caption"}</p>
-
               <span>{photo.albums?.name || "No album"}</span>
-
-              <button className="deleteBtn" onClick={() => deletePhoto(photo.id)}>
-                Delete Photo
-              </button>
+              <button className="deleteBtn" onClick={() => deletePhoto(photo.id)}>Delete Photo</button>
             </div>
           ))}
         </div>
-      </section>
+      </DropdownSection>
 
       <input
         className="nameInput"
@@ -492,15 +423,7 @@ export default function Home() {
   );
 }
 
-function LinkCard({
-  link,
-  categories,
-  onReact,
-  onComment,
-  onDelete,
-  onEditName,
-  onChangeCategory,
-}) {
+function LinkCard({ link, categories, onReact, onComment, onDelete, onEditName, onChangeCategory }) {
   const [comment, setComment] = useState("");
 
   const reactionCounts = {};
@@ -510,40 +433,24 @@ function LinkCard({
 
   return (
     <div className="card">
-      {(link.custom_image || link.image) && (
-        <img src={link.custom_image || link.image} alt="" />
-      )}
+      {(link.custom_image || link.image) && <img src={link.custom_image || link.image} alt="" />}
 
       <div className="cardTop">
         <span className="category">{link.categories?.name || "No category"}</span>
-
         <div className="cardActions">
           <button onClick={() => onEditName(link)}>Edit Name</button>
-          <button className="deleteBtn" onClick={() => onDelete(link.id)}>
-            Delete
-          </button>
+          <button className="deleteBtn" onClick={() => onDelete(link.id)}>Delete</button>
         </div>
       </div>
 
       <h2>{link.custom_name || link.title || "Untitled Link"}</h2>
-
       {link.description && <p>{link.description}</p>}
 
-      <a href={cleanUrl(link.url)} target="_blank" rel="noopener noreferrer">
-        Open link
-      </a>
+      <a href={cleanUrl(link.url)} target="_blank" rel="noopener noreferrer">Open link</a>
 
-      <select
-        className="categorySelect"
-        value={link.category_id || ""}
-        onChange={(e) => onChangeCategory(link.id, e.target.value)}
-      >
+      <select className="categorySelect" value={link.category_id || ""} onChange={(e) => onChangeCategory(link.id, e.target.value)}>
         <option value="">No category</option>
-        {categories.map((cat) => (
-          <option key={cat.id} value={cat.id}>
-            {cat.name}
-          </option>
-        ))}
+        {categories.map((cat) => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
       </select>
 
       <div className="reactions">
@@ -556,7 +463,6 @@ function LinkCard({
 
       <div className="comments">
         <h3>Comments</h3>
-
         {link.comments?.length === 0 && <p className="emptyText">No comments yet.</p>}
 
         {link.comments?.map((c) => (
@@ -565,11 +471,7 @@ function LinkCard({
           </p>
         ))}
 
-        <input
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-          placeholder="Write a comment"
-        />
+        <input value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Write a comment" />
 
         <button
           onClick={() => {
