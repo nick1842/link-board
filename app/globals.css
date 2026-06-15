@@ -1,345 +1,459 @@
 body {
-margin: 0;
-font-family: Arial, sans-serif;
-background: #080a0f;
-color: #f4f4f5;
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #080a0f;
+  color: #f4f4f5;
 }
 
 * {
   box-sizing: border-box;
-  }
+}
 
 .page {
-max-width: 1150px;
-margin: auto;
-padding: 30px;
+  max-width: 1150px;
+  margin: auto;
+  padding: 30px;
 }
 
 .hero {
-background: linear-gradient(135deg, #111827, #1e1b4b);
-border: 1px solid #2a2f3d;
-border-radius: 22px;
-padding: 28px;
-margin-bottom: 20px;
+  background: linear-gradient(135deg, #111827, #1e1b4b);
+  border: 1px solid #2a2f3d;
+  border-radius: 22px;
+  padding: 28px;
+  margin-bottom: 20px;
 }
 
 .hero h1 {
-font-size: 44px;
-margin: 0 0 8px;
+  font-size: 44px;
+  margin: 0 0 8px;
 }
 
 .hero p {
-color: #c7cad1;
-margin: 0;
+  color: #c7cad1;
+  margin: 0;
 }
 
 .panel {
-background: #11141d;
-border: 1px solid #2a2f3d;
-border-radius: 18px;
-padding: 18px;
-margin-bottom: 18px;
+  background: #11141d;
+  border: 1px solid #2a2f3d;
+  border-radius: 18px;
+  padding: 18px;
+  margin-bottom: 18px;
 }
 
 .panel h2 {
-margin-top: 0;
+  margin-top: 0;
 }
 
 .form {
-display: flex;
-gap: 10px;
-flex-wrap: wrap;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 input,
 select,
 textarea {
-padding: 12px;
-border: 1px solid #343a4a;
-border-radius: 10px;
-background: #090b11;
-color: white;
-flex: 1;
-min-width: 180px;
+  padding: 12px;
+  border: 1px solid #343a4a;
+  border-radius: 10px;
+  background: #090b11;
+  color: white;
+  flex: 1;
+  min-width: 180px;
 }
 
 input[type="file"] {
-cursor: pointer;
+  cursor: pointer;
 }
 
 input::placeholder,
 textarea::placeholder {
-color: #8d94a6;
+  color: #8d94a6;
 }
 
 button {
-padding: 12px 15px;
-border: none;
-border-radius: 10px;
-cursor: pointer;
-background: #8b5cf6;
-color: white;
-font-weight: bold;
-transition: 0.2s;
+  padding: 12px 15px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  background: #8b5cf6;
+  color: white;
+  font-weight: bold;
+  transition: 0.2s;
 }
 
 button:hover {
-background: #7c3aed;
+  background: #7c3aed;
 }
 
 .nameInput,
 .fullInput {
-width: 100%;
-margin-bottom: 20px;
+  width: 100%;
+  margin-bottom: 20px;
 }
 
 .grid {
-display: grid;
-grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-gap: 18px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 18px;
 }
 
 .card {
-background: #11141d;
-border: 1px solid #2a2f3d;
-border-radius: 20px;
-padding: 16px;
-box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+  background: #11141d;
+  border: 1px solid #2a2f3d;
+  border-radius: 20px;
+  padding: 16px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
 }
 
 .card img {
-width: 100%;
-aspect-ratio: 16 / 9;
-object-fit: cover;
-border-radius: 14px;
-margin-bottom: 12px;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 14px;
+  margin-bottom: 12px;
 }
 
 .cardTop {
-display: flex;
-justify-content: space-between;
-align-items: center;
-gap: 10px;
-margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
 }
 
 .category {
-background: #27213f;
-color: #c4b5fd;
-padding: 7px 11px;
-border-radius: 999px;
-font-size: 13px;
+  background: #27213f;
+  color: #c4b5fd;
+  padding: 7px 11px;
+  border-radius: 999px;
+  font-size: 13px;
 }
 
 .cardActions {
-display: flex;
-gap: 6px;
+  display: flex;
+  gap: 6px;
 }
 
 .cardActions button {
-padding: 8px 10px;
-font-size: 12px;
-background: #2d3344;
-}
-
-.cardActions button:hover {
-background: #3d465c;
+  padding: 8px 10px;
+  font-size: 12px;
+  background: #2d3344;
 }
 
 .deleteBtn {
-background: #7f1d1d !important;
-}
-
-.deleteBtn:hover {
-background: #991b1b !important;
+  background: #7f1d1d !important;
 }
 
 .card h2 {
-font-size: 21px;
+  font-size: 21px;
 }
 
 .card p {
-color: #c7cad1;
+  color: #c7cad1;
 }
 
 .card a {
-display: block;
-margin: 12px 0;
-color: #a78bfa;
-font-weight: bold;
-text-decoration: none;
-}
-
-.card a:hover {
-text-decoration: underline;
+  display: block;
+  margin: 12px 0;
+  color: #a78bfa;
+  font-weight: bold;
+  text-decoration: none;
 }
 
 .categorySelect {
-width: 100%;
-margin-bottom: 14px;
+  width: 100%;
+  margin-bottom: 14px;
 }
 
 .reactions {
-display: flex;
-gap: 8px;
-margin: 14px 0;
-flex-wrap: wrap;
+  display: flex;
+  gap: 8px;
+  margin: 14px 0;
+  flex-wrap: wrap;
 }
 
 .reactions button {
-background: #262b3a;
+  background: #262b3a;
 }
 
 .comments {
-margin-top: 15px;
-border-top: 1px solid #2a2f3d;
-padding-top: 12px;
+  margin-top: 15px;
+  border-top: 1px solid #2a2f3d;
+  padding-top: 12px;
 }
 
 .comments input {
-width: 100%;
-margin: 8px 0;
+  width: 100%;
+  margin: 8px 0;
 }
 
 .emptyText {
-color: #8d94a6 !important;
+  color: #8d94a6 !important;
 }
 
 .photoGrid {
-display: grid;
-grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-gap: 14px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 6px;
 }
 
 .photoCard {
-position: relative;
-background: #090b11;
-border: 1px solid #2a2f3d;
-border-radius: 16px;
-padding: 12px;
+  position: relative;
+  background: #090b11;
+  border: 1px solid #2a2f3d;
+  border-radius: 10px;
+  padding: 4px;
+  overflow: hidden;
 }
 
 .photoCard img {
-width: 100%;
-aspect-ratio: 1/1;
-object-fit: cover;
-border-radius: 12px;
-margin-bottom: 10px;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 4px;
+  cursor: pointer;
 }
 
 .photoCard p {
-margin-bottom: 6px;
+  margin: 2px 0;
+  font-size: 11px;
+  line-height: 1.2;
 }
 
 .photoCard span {
-display: block;
-color: #c4b5fd;
-font-size: 13px;
+  display: block;
+  font-size: 10px;
+  color: #c4b5fd;
 }
 
 .photoMenuWrap {
-position: absolute;
-bottom: 10px;
-right: 10px;
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  z-index: 20;
 }
 
 .photoMenuButton {
-width: 40px;
-height: 40px;
-border-radius: 999px;
-padding: 0;
-background: rgba(0, 0, 0, 0.8);
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  padding: 0;
+  font-size: 18px;
+  background: rgba(0, 0, 0, 0.85);
 }
 
 .photoMenu {
-position: absolute;
-right: 0;
-bottom: 50px;
-background: #171a23;
-border: 1px solid #2a2f3d;
-border-radius: 12px;
-padding: 8px;
-min-width: 160px;
-display: flex;
-flex-direction: column;
-gap: 6px;
-z-index: 100;
+  position: absolute;
+  right: 0;
+  bottom: 34px;
+  background: #171a23;
+  border: 1px solid #2a2f3d;
+  border-radius: 10px;
+  padding: 6px;
+  min-width: 130px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 100;
 }
 
 .photoMenu button {
-width: 100%;
+  width: 100%;
+  padding: 8px;
+  font-size: 12px;
+}
+
+.viewerOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.92);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 15px;
+}
+
+.viewerContent {
+  position: relative;
+  max-width: 95vw;
+  max-height: 95vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.viewerImage {
+  max-width: 100%;
+  max-height: 78vh;
+  object-fit: contain;
+  border-radius: 14px;
+}
+
+.viewerClose {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10001;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  padding: 0;
+  font-size: 28px;
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.viewerArrow {
+  position: absolute;
+  top: 45%;
+  z-index: 10001;
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  padding: 0;
+  font-size: 34px;
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.viewerArrowLeft {
+  left: 10px;
+}
+
+.viewerArrowRight {
+  right: 10px;
+}
+
+.viewerMenuWrap {
+  position: absolute;
+  right: 12px;
+  bottom: 85px;
+  z-index: 10001;
+}
+
+.viewerMenuButton {
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  padding: 0;
+  font-size: 24px;
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.viewerMenu {
+  position: absolute;
+  right: 0;
+  bottom: 50px;
+  background: #171a23;
+  border: 1px solid #2a2f3d;
+  border-radius: 12px;
+  padding: 8px;
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.viewerMenu button {
+  width: 100%;
+}
+
+.viewerInfo {
+  width: 100%;
+  max-width: 700px;
+  text-align: center;
+  margin-top: 10px;
+}
+
+.viewerInfo p {
+  margin: 5px 0;
+}
+
+.viewerInfo span {
+  color: #c4b5fd;
+  font-size: 13px;
 }
 
 .dropdownPanel {
-margin-bottom: 14px;
+  margin-bottom: 14px;
 }
 
 .dropdownPanel summary {
-display: none;
+  display: none;
 }
 
 @media (max-width: 768px) {
-.page {
-padding: 15px;
-}
+  .page {
+    padding: 15px;
+  }
 
-.hero {
-padding: 20px;
-}
+  .hero {
+    padding: 20px;
+  }
 
-.hero h1 {
-font-size: 32px;
-}
+  .hero h1 {
+    font-size: 32px;
+  }
 
-.dropdownPanel {
-background: #11141d;
-border: 1px solid #2a2f3d;
-border-radius: 16px;
-overflow: hidden;
-}
+  .dropdownPanel {
+    background: #11141d;
+    border: 1px solid #2a2f3d;
+    border-radius: 16px;
+    overflow: hidden;
+  }
 
-.dropdownPanel summary {
-display: block;
-padding: 16px;
-font-weight: bold;
-cursor: pointer;
-background: #171a23;
-color: white;
-}
+  .dropdownPanel summary {
+    display: block;
+    padding: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    background: #171a23;
+  }
 
-.dropdownPanel .panel {
-border: none;
-border-radius: 0;
-margin-bottom: 0;
-}
+  .dropdownPanel .panel {
+    border: none;
+    border-radius: 0;
+    margin-bottom: 0;
+  }
 
-.dropdownPanel .panel h2 {
-display: none;
-}
+  .dropdownPanel .panel h2 {
+    display: none;
+  }
 
-.form {
-flex-direction: column;
-}
+  .form {
+    flex-direction: column;
+  }
 
-.form input,
-.form select,
-.form button {
-width: 100%;
-}
+  .form input,
+  .form select,
+  .form button {
+    width: 100%;
+  }
 
-.grid {
-grid-template-columns: 1fr;
-}
+  .grid {
+    grid-template-columns: 1fr;
+  }
 
-.photoGrid {
-grid-template-columns: 1fr;
-}
+  .photoGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 
-.cardActions {
-flex-direction: column;
-}
+  .cardActions {
+    flex-direction: column;
+  }
 
-.reactions {
-justify-content: center;
-}
+  .reactions {
+    justify-content: center;
+  }
+
+  .viewerImage {
+    max-height: 72vh;
+  }
+
+  .viewerArrow {
+    display: none;
+  }
 }

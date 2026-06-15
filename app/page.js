@@ -5,9 +5,7 @@ import { supabase } from "../lib/supabase";
 
 function cleanUrl(url) {
   if (!url) return "";
-  return url.startsWith("http://") || url.startsWith("https://")
-    ? url
-    : `https://${url}`;
+  return url.startsWith("http://") || url.startsWith("https://") ? url : `https://${url}`;
 }
 
 function safeFileName(file) {
@@ -92,6 +90,8 @@ export default function Home() {
   const [photoFiles, setPhotoFiles] = useState([]);
   const [selectedAlbum, setSelectedAlbum] = useState("ALL");
   const [openPhotoMenu, setOpenPhotoMenu] = useState(null);
+  const [viewerIndex, setViewerIndex] = useState(null);
+  const [touchStartX, setTouchStartX] = useState(null);
 
   const [uploadingLinkImage, setUploadingLinkImage] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -106,6 +106,19 @@ export default function Home() {
     }
   }, []);
 
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if (viewerIndex === null) return;
+
+      if (e.key === "Escape") closeViewer();
+      if (e.key === "ArrowRight") nextPhoto();
+      if (e.key === "ArrowLeft") previousPhoto();
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [viewerIndex, photos, selectedAlbum]);
+
   async function loadEverything() {
     await loadCategories();
     await loadLinks();
@@ -119,9 +132,7 @@ export default function Home() {
     const compressedFile = await compressImage(file);
     const fileName = safeFileName(compressedFile);
 
-    const { error } = await supabase.storage
-      .from(bucket)
-      .upload(fileName, compressedFile);
+    const { error } = await supabase.storage.from(bucket).upload(fileName, compressedFile);
 
     if (error) {
       console.error("Upload error:", error);
@@ -349,7 +360,9 @@ export default function Home() {
     if (!confirm("Delete this photo?")) return;
 
     await supabase.from("photos").delete().eq("id", photoId);
+
     setOpenPhotoMenu(null);
+    closeViewer();
     loadPhotos();
   }
 
@@ -417,6 +430,46 @@ export default function Home() {
           photo.photo_albums?.some((pa) => pa.album_id === selectedAlbum)
         );
 
+  const currentPhoto = viewerIndex !== null ? filteredPhotos[viewerIndex] : null;
+
+  function openViewer(index) {
+    setViewerIndex(index);
+    setOpenPhotoMenu(null);
+  }
+
+  function closeViewer() {
+    setViewerIndex(null);
+    setOpenPhotoMenu(null);
+  }
+
+  function nextPhoto() {
+    if (filteredPhotos.length === 0) return;
+    setViewerIndex((prev) =>
+      prev === null ? 0 : prev === filteredPhotos.length - 1 ? 0 : prev + 1
+    );
+    setOpenPhotoMenu(null);
+  }
+
+  function previousPhoto() {
+    if (filteredPhotos.length === 0) return;
+    setViewerIndex((prev) =>
+      prev === null ? 0 : prev === 0 ? filteredPhotos.length - 1 : prev - 1
+    );
+    setOpenPhotoMenu(null);
+  }
+
+  function handleTouchEnd(e) {
+    if (touchStartX === null) return;
+
+    const touchEndX = e.changedTouches[0].clientX;
+    const diff = touchStartX - touchEndX;
+
+    if (diff > 50) nextPhoto();
+    if (diff < -50) previousPhoto();
+
+    setTouchStartX(null);
+  }
+
   return (
     <main className="page">
       <header className="hero">
@@ -428,33 +481,18 @@ export default function Home() {
         <h2>Add a Link</h2>
 
         <div className="form">
-          <input
-            value={customName}
-            onChange={(e) => setCustomName(e.target.value)}
-            placeholder="Optional link name"
-          />
+          <input value={customName} onChange={(e) => setCustomName(e.target.value)} placeholder="Optional link name" />
 
-          <input
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="Paste a link"
-          />
+          <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="Paste a link" />
 
           <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
             <option value="">No category</option>
             {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.name}
-              </option>
+              <option key={cat.id} value={cat.id}>{cat.name}</option>
             ))}
           </select>
 
-          <input
-            id="linkImageInput"
-            type="file"
-            accept="image/*"
-            onChange={(e) => setLinkImageFile(e.target.files[0])}
-          />
+          <input id="linkImageInput" type="file" accept="image/*" onChange={(e) => setLinkImageFile(e.target.files[0])} />
 
           <button onClick={saveLink} disabled={uploadingLinkImage}>
             {uploadingLinkImage ? "Uploading..." : "Save Link"}
@@ -466,11 +504,7 @@ export default function Home() {
         <h2>Create Category</h2>
 
         <div className="form">
-          <input
-            value={newCategory}
-            onChange={(e) => setNewCategory(e.target.value)}
-            placeholder="Example: School, Music, Videos"
-          />
+          <input value={newCategory} onChange={(e) => setNewCategory(e.target.value)} placeholder="Example: School, Music, Videos" />
           <button onClick={createCategory}>Add Category</button>
         </div>
       </DropdownSection>
@@ -478,23 +512,14 @@ export default function Home() {
       <DropdownSection title="Search Links" defaultOpen={true}>
         <h2>Search Links</h2>
 
-        <input
-          className="fullInput"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by name, category, URL, or description"
-        />
+        <input className="fullInput" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name, category, URL, or description" />
       </DropdownSection>
 
       <DropdownSection title="Create Album">
         <h2>Create Album</h2>
 
         <div className="form">
-          <input
-            value={newAlbum}
-            onChange={(e) => setNewAlbum(e.target.value)}
-            placeholder="Example: Vacation, Friends, School"
-          />
+          <input value={newAlbum} onChange={(e) => setNewAlbum(e.target.value)} placeholder="Example: Vacation, Friends, School" />
           <button onClick={createAlbum}>Add Album</button>
         </div>
       </DropdownSection>
@@ -503,26 +528,14 @@ export default function Home() {
         <h2>Upload Photos</h2>
 
         <div className="form">
-          <input
-            id="photoUploadInput"
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={(e) => setPhotoFiles(Array.from(e.target.files))}
-          />
+          <input id="photoUploadInput" type="file" accept="image/*" multiple onChange={(e) => setPhotoFiles(Array.from(e.target.files))} />
 
-          <input
-            value={photoCaption}
-            onChange={(e) => setPhotoCaption(e.target.value)}
-            placeholder="Optional caption for all selected photos"
-          />
+          <input value={photoCaption} onChange={(e) => setPhotoCaption(e.target.value)} placeholder="Optional caption for all selected photos" />
 
           <select value={photoAlbumId} onChange={(e) => setPhotoAlbumId(e.target.value)}>
             <option value="">Only ALL album</option>
             {albums.map((album) => (
-              <option key={album.id} value={album.id}>
-                Also add to {album.name}
-              </option>
+              <option key={album.id} value={album.id}>Also add to {album.name}</option>
             ))}
           </select>
 
@@ -537,55 +550,38 @@ export default function Home() {
       <DropdownSection title="Photo Albums">
         <h2>Photo Albums</h2>
 
-        <select
-          className="fullInput"
-          value={selectedAlbum}
-          onChange={(e) => setSelectedAlbum(e.target.value)}
-        >
+        <select className="fullInput" value={selectedAlbum} onChange={(e) => setSelectedAlbum(e.target.value)}>
           <option value="ALL">ALL</option>
           {albums.map((album) => (
-            <option key={album.id} value={album.id}>
-              {album.name}
-            </option>
+            <option key={album.id} value={album.id}>{album.name}</option>
           ))}
         </select>
 
         <div className="photoGrid">
-          {filteredPhotos.map((photo) => (
+          {filteredPhotos.map((photo, index) => (
             <div className="photoCard" key={photo.id}>
               <div className="photoMenuWrap">
-                <button
-                  className="photoMenuButton"
-                  onClick={() =>
-                    setOpenPhotoMenu(openPhotoMenu === photo.id ? null : photo.id)
-                  }
-                >
+                <button className="photoMenuButton" onClick={() => setOpenPhotoMenu(openPhotoMenu === photo.id ? null : photo.id)}>
                   ⋯
                 </button>
 
                 {openPhotoMenu === photo.id && (
                   <div className="photoMenu">
                     <button onClick={() => downloadPhoto(photo)}>Download</button>
-                    <button onClick={() => addPhotoToAlbum(photo.id)}>
-                      Add to Album
-                    </button>
-                    <button className="deleteBtn" onClick={() => deletePhoto(photo.id)}>
-                      Delete
-                    </button>
+                    <button onClick={() => addPhotoToAlbum(photo.id)}>Add to Album</button>
+                    <button className="deleteBtn" onClick={() => deletePhoto(photo.id)}>Delete</button>
                   </div>
                 )}
               </div>
 
-              <img src={photo.image_url} alt="" />
+              <img src={photo.image_url} alt="" onClick={() => openViewer(index)} />
 
               <p>{photo.caption || "No caption"}</p>
 
               <span>
                 Albums:{" "}
                 {photo.photo_albums?.length
-                  ? ["ALL", ...photo.photo_albums.map((pa) => pa.albums?.name)].join(
-                      ", "
-                    )
+                  ? ["ALL", ...photo.photo_albums.map((pa) => pa.albums?.name)].join(", ")
                   : "ALL"}
               </span>
             </div>
@@ -593,12 +589,7 @@ export default function Home() {
         </div>
       </DropdownSection>
 
-      <input
-        className="nameInput"
-        value={guestName}
-        onChange={(e) => setGuestName(e.target.value)}
-        placeholder="Your name for comments, or leave blank for Anonymous"
-      />
+      <input className="nameInput" value={guestName} onChange={(e) => setGuestName(e.target.value)} placeholder="Your name for comments, or leave blank for Anonymous" />
 
       <div className="grid">
         {filteredLinks.map((link) => (
@@ -614,19 +605,53 @@ export default function Home() {
           />
         ))}
       </div>
+
+      {currentPhoto && (
+        <div className="viewerOverlay" onClick={closeViewer}>
+          <div
+            className="viewerContent"
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => setTouchStartX(e.touches[0].clientX)}
+            onTouchEnd={handleTouchEnd}
+          >
+            <button className="viewerClose" onClick={closeViewer}>×</button>
+
+            <button className="viewerArrow viewerArrowLeft" onClick={previousPhoto}>‹</button>
+            <button className="viewerArrow viewerArrowRight" onClick={nextPhoto}>›</button>
+
+            <div className="viewerMenuWrap">
+              <button className="viewerMenuButton" onClick={() => setOpenPhotoMenu(openPhotoMenu === "viewer" ? null : "viewer")}>
+                ⋯
+              </button>
+
+              {openPhotoMenu === "viewer" && (
+                <div className="viewerMenu">
+                  <button onClick={() => downloadPhoto(currentPhoto)}>Download</button>
+                  <button onClick={() => addPhotoToAlbum(currentPhoto.id)}>Add to Album</button>
+                  <button className="deleteBtn" onClick={() => deletePhoto(currentPhoto.id)}>Delete</button>
+                </div>
+              )}
+            </div>
+
+            <img className="viewerImage" src={currentPhoto.image_url} alt="" />
+
+            <div className="viewerInfo">
+              <p>{currentPhoto.caption || "No caption"}</p>
+              <span>
+                Albums:{" "}
+                {currentPhoto.photo_albums?.length
+                  ? ["ALL", ...currentPhoto.photo_albums.map((pa) => pa.albums?.name)].join(", ")
+                  : "ALL"}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
 
-function LinkCard({
-  link,
-  categories,
-  onReact,
-  onComment,
-  onDelete,
-  onEditName,
-  onChangeCategory,
-}) {
+function LinkCard({ link, categories, onReact, onComment, onDelete, onEditName, onChangeCategory }) {
   const [comment, setComment] = useState("");
 
   const reactionCounts = {};
@@ -636,18 +661,14 @@ function LinkCard({
 
   return (
     <div className="card">
-      {(link.custom_image || link.image) && (
-        <img src={link.custom_image || link.image} alt="" />
-      )}
+      {(link.custom_image || link.image) && <img src={link.custom_image || link.image} alt="" />}
 
       <div className="cardTop">
         <span className="category">{link.categories?.name || "No category"}</span>
 
         <div className="cardActions">
           <button onClick={() => onEditName(link)}>Edit Name</button>
-          <button className="deleteBtn" onClick={() => onDelete(link.id)}>
-            Delete
-          </button>
+          <button className="deleteBtn" onClick={() => onDelete(link.id)}>Delete</button>
         </div>
       </div>
 
@@ -655,20 +676,12 @@ function LinkCard({
 
       {link.description && <p>{link.description}</p>}
 
-      <a href={cleanUrl(link.url)} target="_blank" rel="noopener noreferrer">
-        Open link
-      </a>
+      <a href={cleanUrl(link.url)} target="_blank" rel="noopener noreferrer">Open link</a>
 
-      <select
-        className="categorySelect"
-        value={link.category_id || ""}
-        onChange={(e) => onChangeCategory(link.id, e.target.value)}
-      >
+      <select className="categorySelect" value={link.category_id || ""} onChange={(e) => onChangeCategory(link.id, e.target.value)}>
         <option value="">No category</option>
         {categories.map((cat) => (
-          <option key={cat.id} value={cat.id}>
-            {cat.name}
-          </option>
+          <option key={cat.id} value={cat.id}>{cat.name}</option>
         ))}
       </select>
 
@@ -691,11 +704,7 @@ function LinkCard({
           </p>
         ))}
 
-        <input
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-          placeholder="Write a comment"
-        />
+        <input value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Write a comment" />
 
         <button
           onClick={() => {
