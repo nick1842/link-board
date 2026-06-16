@@ -100,6 +100,9 @@ export default function Home() {
   const [showPhotoTools, setShowPhotoTools] = useState(false);
   const [photoScreen, setPhotoScreen] = useState("main");
 
+  const [showLinksSection, setShowLinksSection] = useState(false);
+  const [showPhotosSection, setShowPhotosSection] = useState(false);
+
   useEffect(() => {
   loadEverything();
 
