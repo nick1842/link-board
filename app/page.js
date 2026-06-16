@@ -648,7 +648,7 @@ async function addComment(linkId, text) {
         <p>Save links, upload photos, organize albums, and let people comment.</p>
 
         <div className="datingCounter">
-  <h2>Me and my girlfriend have been dating for</h2>
+  <h2>Nimori🤫</h2>
   <p>{datingTime}</p>
 </div>
 
