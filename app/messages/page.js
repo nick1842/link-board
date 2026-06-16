@@ -80,10 +80,23 @@ if (id) {
 async function markMessagesRead(id) {
   if (!id) return;
 
-  await supabase.from("message_reads").upsert({
+  const now = new Date().toISOString();
+
+  localStorage.setItem("messages_last_read_at", now);
+
+  await supabase
+    .from("message_reads")
+    .delete()
+    .eq("visitor_id", id);
+
+  const { error } = await supabase.from("message_reads").insert({
     visitor_id: id,
-    last_read_at: new Date().toISOString(),
+    last_read_at: now,
   });
+
+  if (error) {
+    console.error("Error marking messages read:", error);
+  }
 }
 
   async function sendMessage() {
@@ -116,9 +129,21 @@ async function markMessagesRead(id) {
   return (
     <main className="messagesPage">
       <header className="messagesHeader">
-        <Link href="/" className="backChatButton">
-          ←
-        </Link>
+        <button
+  className="backChatButton"
+  onClick={async () => {
+    const now = new Date().toISOString();
+    localStorage.setItem("messages_last_read_at", now);
+
+    if (visitorId) {
+      await markMessagesRead(visitorId);
+    }
+
+    window.location.href = "/";
+  }}
+>
+  ←
+</button>
 
         <div>
           <h1>Messages</h1>
