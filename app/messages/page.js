@@ -10,6 +10,7 @@ export default function MessagesPage() {
   const [guestName, setGuestName] = useState("");
   const [visitorId, setVisitorId] = useState("");
   const bottomRef = useRef(null);
+  const [readReceipts, setReadReceipts] = useState([]);
 
   useEffect(() => {
     let id = localStorage.getItem("visitor_id");
@@ -21,6 +22,8 @@ export default function MessagesPage() {
 
     setVisitorId(id);
     loadMessages();
+    markMessagesRead(id);
+    loadReadReceipts();
 
     const channel = supabase
       .channel("messages-live")
@@ -29,6 +32,7 @@ export default function MessagesPage() {
         { event: "*", schema: "public", table: "messages" },
         () => {
           loadMessages();
+          loadReadReceipts();
         }
       )
       .subscribe();
@@ -54,7 +58,33 @@ export default function MessagesPage() {
     }
 
     setMessages(data || []);
+    const id = localStorage.getItem("visitor_id");
+if (id) {
+  await markMessagesRead(id);
+}
   }
+
+  async function loadReadReceipts() {
+  const { data, error } = await supabase
+    .from("message_reads")
+    .select("*");
+
+  if (error) {
+    console.error("Error loading read receipts:", error);
+    return;
+  }
+
+  setReadReceipts(data || []);
+}
+
+async function markMessagesRead(id) {
+  if (!id) return;
+
+  await supabase.from("message_reads").upsert({
+    visitor_id: id,
+    last_read_at: new Date().toISOString(),
+  });
+}
 
   async function sendMessage() {
   if (!messageText.trim()) return;
