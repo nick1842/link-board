@@ -95,7 +95,9 @@ export default function Home() {
 
   const [uploadingLinkImage, setUploadingLinkImage] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
   const [showPhotoTools, setShowPhotoTools] = useState(false);
+  const [photoScreen, setPhotoScreen] = useState("main");
 
   useEffect(() => {
   loadEverything();
@@ -529,31 +531,73 @@ export default function Home() {
 
 <DropdownSection title="Photos" defaultOpen={true}>
   <div className="photosHeader">
-    <h2>Photos</h2>
+    <h2>
+      {photoScreen === "main" && "Photos"}
+      {photoScreen === "createAlbum" && "Create Album"}
+      {photoScreen === "uploadPhotos" && "Upload Photos"}
+    </h2>
 
-    <button
-      className="plusButton"
-      onClick={() => setShowPhotoTools(!showPhotoTools)}
-    >
-      +
-    </button>
+    {photoScreen === "main" ? (
+      <div className="plusMenuWrap">
+        <button
+          className="plusButton"
+          onClick={() => setShowPhotoTools(!showPhotoTools)}
+        >
+          +
+        </button>
+
+        {showPhotoTools && (
+          <div className="plusMenu">
+            <button
+              onClick={() => {
+                setPhotoScreen("createAlbum");
+                setShowPhotoTools(false);
+              }}
+            >
+              Create Album
+            </button>
+
+            <button
+              onClick={() => {
+                setPhotoScreen("uploadPhotos");
+                setShowPhotoTools(false);
+              }}
+            >
+              Upload Photos
+            </button>
+          </div>
+        )}
+      </div>
+    ) : (
+      <button className="backButton" onClick={() => setPhotoScreen("main")}>
+        Back
+      </button>
+    )}
   </div>
 
-  {showPhotoTools && (
+  {photoScreen === "createAlbum" && (
     <div className="photoTools">
-      <h3>Create Album</h3>
-
       <div className="form">
         <input
           value={newAlbum}
           onChange={(e) => setNewAlbum(e.target.value)}
           placeholder="Example: Vacation, Friends, School"
         />
-        <button onClick={createAlbum}>Add Album</button>
+
+        <button
+          onClick={() => {
+            createAlbum();
+            setPhotoScreen("main");
+          }}
+        >
+          Add Album
+        </button>
       </div>
+    </div>
+  )}
 
-      <h3>Upload Photos</h3>
-
+  {photoScreen === "uploadPhotos" && (
+    <div className="photoTools">
       <div className="form">
         <input
           id="photoUploadInput"
@@ -581,7 +625,13 @@ export default function Home() {
           ))}
         </select>
 
-        <button onClick={uploadPhoto} disabled={uploadingPhoto}>
+        <button
+          onClick={async () => {
+            await uploadPhoto();
+            setPhotoScreen("main");
+          }}
+          disabled={uploadingPhoto}
+        >
           {uploadingPhoto
             ? "Compressing & Uploading..."
             : `Upload ${
@@ -594,65 +644,74 @@ export default function Home() {
     </div>
   )}
 
-  <select
-    className="fullInput"
-    value={selectedAlbum}
-    onChange={(e) => setSelectedAlbum(e.target.value)}
-  >
-    <option value="ALL">ALL</option>
-    {albums.map((album) => (
-      <option key={album.id} value={album.id}>
-        {album.name}
-      </option>
-    ))}
-  </select>
+  {photoScreen === "main" && (
+    <>
+      <select
+        className="fullInput"
+        value={selectedAlbum}
+        onChange={(e) => setSelectedAlbum(e.target.value)}
+      >
+        <option value="ALL">ALL</option>
+        {albums.map((album) => (
+          <option key={album.id} value={album.id}>
+            {album.name}
+          </option>
+        ))}
+      </select>
 
-  <div className="photoGrid">
-    {filteredPhotos.map((photo, index) => (
-      <div className="photoCard" key={photo.id}>
-        <div className="photoMenuWrap">
-          <button
-            className="photoMenuButton"
-            onClick={() =>
-              setOpenPhotoMenu(openPhotoMenu === photo.id ? null : photo.id)
-            }
-          >
-            ⋯
-          </button>
-
-          {openPhotoMenu === photo.id && (
-            <div className="photoMenu">
-              <button onClick={() => downloadPhoto(photo)}>Download</button>
-              <button onClick={() => addPhotoToAlbum(photo.id)}>
-                Add to Album
-              </button>
+      <div className="photoGrid">
+        {filteredPhotos.map((photo, index) => (
+          <div className="photoCard" key={photo.id}>
+            <div className="photoMenuWrap">
               <button
-                className="deleteBtn"
-                onClick={() => deletePhoto(photo.id)}
+                className="photoMenuButton"
+                onClick={() =>
+                  setOpenPhotoMenu(openPhotoMenu === photo.id ? null : photo.id)
+                }
               >
-                Delete
+                ⋯
               </button>
+
+              {openPhotoMenu === photo.id && (
+                <div className="photoMenu">
+                  <button onClick={() => downloadPhoto(photo)}>Download</button>
+                  <button onClick={() => addPhotoToAlbum(photo.id)}>
+                    Add to Album
+                  </button>
+                  <button
+                    className="deleteBtn"
+                    onClick={() => deletePhoto(photo.id)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              )}
             </div>
-          )}
-        </div>
 
-        <img src={photo.image_url} alt="" onClick={() => openViewer(index)} />
+            <img
+              src={photo.image_url}
+              alt=""
+              onClick={() => openViewer(index)}
+            />
 
-        <p>{photo.caption || "No caption"}</p>
+            <p>{photo.caption || "No caption"}</p>
 
-        <span>
-          Albums:{" "}
-          {photo.photo_albums?.length
-            ? ["ALL", ...photo.photo_albums.map((pa) => pa.albums?.name)].join(
-                ", "
-              )
-            : "ALL"}
-        </span>
+            <span>
+              Albums:{" "}
+              {photo.photo_albums?.length
+                ? [
+                    "ALL",
+                    ...photo.photo_albums.map((pa) => pa.albums?.name),
+                  ].join(", ")
+                : "ALL"}
+            </span>
+          </div>
+        ))}
       </div>
-    ))}
-  </div>
-</DropdownSection>
-      <input className="nameInput" value={guestName} onChange={(e) => setGuestName(e.target.value)} placeholder="Your name for comments, or leave blank for Anonymous" />
+    </>
+  )}
+</DropdownSection>      
+<input className="nameInput" value={guestName} onChange={(e) => setGuestName(e.target.value)} placeholder="Your name for comments, or leave blank for Anonymous" />
 
       <div className="grid">
         {filteredLinks.map((link) => (

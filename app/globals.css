@@ -456,4 +456,49 @@ button:hover {
   .viewerArrow {
     display: none;
   }
+  .photosHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.plusMenuWrap {
+  position: relative;
+}
+
+.plusButton {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+}
+
+.plusMenu {
+  position: absolute;
+  right: 0;
+  top: 52px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 170px;
+  padding: 10px;
+  border-radius: 14px;
+  background: white;
+  box-shadow: 0 12px 30px rgba(0,0,0,.18);
+  z-index: 100;
+}
+
+.backButton {
+  border: none;
+  border-radius: 999px;
+  padding: 10px 16px;
+  cursor: pointer;
+}
+
+.photoTools {
+  margin-bottom: 20px;
+}
 }
