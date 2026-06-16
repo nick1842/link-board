@@ -111,8 +111,9 @@ export default function Home() {
 
 const [enteredPassword, setEnteredPassword] = useState("");
 const [unlocked, setUnlocked] = useState(false);
+const [passwordError, setPasswordError] = useState("");
 
-const SITE_PASSWORD = "sigma";
+const SITE_PASSWORD = "yourpassword";
 
 if (!unlocked) {
   return (
@@ -125,14 +126,28 @@ if (!unlocked) {
           placeholder="Password"
           value={enteredPassword}
           onChange={(e) => setEnteredPassword(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              if (enteredPassword === SITE_PASSWORD) {
+                setUnlocked(true);
+                setPasswordError("");
+              } else {
+                setPasswordError("Wrong password");
+              }
+            }
+          }}
         />
 
+        {passwordError && <p className="password-error">{passwordError}</p>}
+
         <button
+          type="button"
           onClick={() => {
             if (enteredPassword === SITE_PASSWORD) {
               setUnlocked(true);
+              setPasswordError("");
             } else {
-              alert("Wrong password");
+              setPasswordError("Wrong password");
             }
           }}
         >
@@ -141,8 +156,7 @@ if (!unlocked) {
       </div>
     </main>
   );
-}
-useEffect(() => {
+}useEffect(() => {
   function updateDatingTime() {
     const startDate = new Date("2024-09-21T00:00:00");
     const now = new Date();
