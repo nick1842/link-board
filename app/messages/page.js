@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 
 export default function MessagesPage() {
@@ -10,47 +9,47 @@ export default function MessagesPage() {
   const [guestName, setGuestName] = useState("");
   const [visitorId, setVisitorId] = useState("");
   const bottomRef = useRef(null);
-  const [readReceipts, setReadReceipts] = useState([]);
 
   useEffect(() => {
-  let id = localStorage.getItem("visitor_id");
+    let id = localStorage.getItem("visitor_id");
 
-  if (!id) {
-    id = Math.random().toString(36).substring(2, 15);
-    localStorage.setItem("visitor_id", id);
-  }
+    if (!id) {
+      id = Math.random().toString(36).substring(2, 15);
+      localStorage.setItem("visitor_id", id);
+    }
 
-  setVisitorId(id);
-  loadMessages();
-  markMessagesRead(id);
-  loadReadReceipts();
+    setVisitorId(id);
+    loadMessages();
 
-  const channel = supabase
-    .channel("messages-live")
-    .on(
-      "postgres_changes",
-      {
-        event: "INSERT",
-        schema: "public",
-        table: "messages",
-      },
-      (payload) => {
-        setMessages((currentMessages) => [
-          ...currentMessages,
-          payload.new,
-        ]);
+    const channel = supabase
+      .channel("messages-live")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+        },
+        (payload) => {
+          setMessages((currentMessages) => {
+            const alreadyExists = currentMessages.some(
+              (msg) => msg.id === payload.new.id
+            );
 
-        setTimeout(() => {
-          bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-        }, 100);
-      }
-    )
-    .subscribe();
+            if (alreadyExists) return currentMessages;
 
-  return () => {
-    supabase.removeChannel(channel);
-  };
-}, []);
+            return [...currentMessages, payload.new];
+          });
+        }
+      )
+      .subscribe((status) => {
+        console.log("Realtime status:", status);
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -68,66 +67,25 @@ export default function MessagesPage() {
     }
 
     setMessages(data || []);
-    const id = localStorage.getItem("visitor_id");
-if (id) {
-  await markMessagesRead(id);
-}
   }
-
-  async function loadReadReceipts() {
-  const { data, error } = await supabase
-    .from("message_reads")
-    .select("*");
-
-  if (error) {
-    console.error("Error loading read receipts:", error);
-    return;
-  }
-
-  setReadReceipts(data || []);
-}
-
-async function markMessagesRead(id) {
-  if (!id) return;
-
-  const now = new Date().toISOString();
-
-  localStorage.setItem("messages_last_read_at", now);
-
-  await supabase
-    .from("message_reads")
-    .delete()
-    .eq("visitor_id", id);
-
-  const { error } = await supabase.from("message_reads").insert({
-    visitor_id: id,
-    last_read_at: now,
-  });
-
-  if (error) {
-    console.error("Error marking messages read:", error);
-  }
-}
 
   async function sendMessage() {
-  if (!messageText.trim()) return;
+    if (!messageText.trim()) return;
 
-  const { error } = await supabase.from("messages").insert({
-    guest_name: guestName.trim() || "Anonymous",
-    message: messageText.trim(),
-    visitor_id: visitorId,
-  });
+    const { error } = await supabase.from("messages").insert({
+      guest_name: guestName.trim() || "Anonymous",
+      message: messageText.trim(),
+      visitor_id: visitorId,
+    });
 
-  if (error) {
-    console.error("Error sending message:", error);
-    alert("Message failed to send.");
-    return;
+    if (error) {
+      console.error("Error sending message:", error);
+      alert("Message failed to send.");
+      return;
+    }
+
+    setMessageText("");
   }
-
-  setMessageText("");
-
-  await loadMessages(); // ADD THIS
-}
 
   function formatTime(dateString) {
     return new Date(dateString).toLocaleTimeString([], {
@@ -140,20 +98,13 @@ async function markMessagesRead(id) {
     <main className="messagesPage">
       <header className="messagesHeader">
         <button
-  className="backChatButton"
-  onClick={async () => {
-    const now = new Date().toISOString();
-    localStorage.setItem("messages_last_read_at", now);
-
-    if (visitorId) {
-      await markMessagesRead(visitorId);
-    }
-
-    window.location.href = "/";
-  }}
->
-  ←
-</button>
+          className="backChatButton"
+          onClick={() => {
+            window.location.href = "/";
+          }}
+        >
+          ←
+        </button>
 
         <div>
           <h1>Messages</h1>
@@ -182,22 +133,10 @@ async function markMessagesRead(id) {
                 className={`messageRow ${isMine ? "mine" : "theirs"}`}
               >
                 <div className="messageBubble">
-  {!isMine && <strong>{msg.guest_name || "Anonymous"}</strong>}
-  <p>{msg.message}</p>
-  <span>{formatTime(msg.created_at)}</span>
-
-  {isMine && (
-    <small className="readReceipt">
-      {readReceipts.some(
-        (r) =>
-          r.visitor_id !== visitorId &&
-          new Date(r.last_read_at) > new Date(msg.created_at)
-      )
-        ? "Read"
-        : "Delivered"}
-    </small>
-  )}
-</div>
+                  {!isMine && <strong>{msg.guest_name || "Anonymous"}</strong>}
+                  <p>{msg.message}</p>
+                  <span>{formatTime(msg.created_at)}</span>
+                </div>
               </div>
             );
           })
