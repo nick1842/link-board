@@ -144,14 +144,7 @@ export default function Home() {
   await loadPhotos();
   await loadNotifications();
 }
-  await loadAlbums();
-  await loadPhotos();
-  await createNotification(
-  "photo",
-  `${guestName || "Someone"} uploaded photo(s)`
-);
-  await loadNotifications();
-}
+
 
 async function loadNotifications() {
   const { data, error } = await supabase
@@ -901,7 +894,6 @@ async function createNotification(type, message) {
       )}
     </main>
   );
-}
 
 function LinkCard({ link, categories, onReact, onComment, onDelete, onEditName, onChangeCategory }) {
   const [comment, setComment] = useState("");
