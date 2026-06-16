@@ -231,11 +231,13 @@ async function checkUnreadMessages() {
     .maybeSingle();
 
   const { data: readInfo } = await supabase
-    .from("message_reads")
-    .select("last_read_at")
-    .eq("visitor_id", visitorId)
-    .maybeSingle();
-
+  .from("message_reads")
+  .select("last_read_at")
+  .eq("visitor_id", visitorId)
+  .order("last_read_at", { ascending: false })
+  .limit(1)
+  .maybeSingle();
+  
   if (!lastMessage) {
     setHasUnreadMessages(false);
     return;
