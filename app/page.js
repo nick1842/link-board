@@ -100,6 +100,9 @@ export default function Home() {
   const [showPhotoTools, setShowPhotoTools] = useState(false);
   const [photoScreen, setPhotoScreen] = useState("main");
 
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+
   useEffect(() => {
   loadEverything();
 
@@ -135,11 +138,49 @@ export default function Home() {
   }, [viewerIndex, photos, selectedAlbum]);
 
   async function loadEverything() {
-    await loadCategories();
-    await loadLinks();
-    await loadAlbums();
-    await loadPhotos();
+  await loadCategories();
+  await loadLinks();
+  await createNotification(
+  "link",
+  `${guestName || "Someone"} added a new link`
+);
+  await loadAlbums();
+  await loadPhotos();
+  await createNotification(
+  "photo",
+  `${guestName || "Someone"} uploaded photo(s)`
+);
+  await loadNotifications();
+}
+
+async function loadNotifications() {
+  const { data, error } = await supabase
+    .from("notifications")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error loading notifications:", error);
+    return;
   }
+
+  setNotifications(data || []);
+}
+
+async function createNotification(type, message) {
+  const { error } = await supabase.from("notifications").insert({
+    type,
+    message,
+    read: false,
+  });
+
+  if (error) {
+    console.error("Error creating notification:", error);
+    return;
+  }
+
+  loadNotifications();
+}
 
   async function uploadToBucket(bucket, file) {
     if (!file) return null;
@@ -488,9 +529,36 @@ export default function Home() {
   return (
     <main className="page">
       <header className="hero">
-        <h1>My Link Board</h1>
-        <p>Save links, upload photos, organize albums, and let people comment.</p>
-      </header>
+  <div className="heroTop">
+    <h1>My Link Board</h1>
+
+    <button
+      className="bombButton"
+      onClick={() => setShowNotifications(!showNotifications)}
+    >
+      💣
+    </button>
+  </div>
+
+  <p>
+    Save links, upload photos, organize albums, and let people comment.
+  </p>
+
+  {showNotifications && (
+    <div className="notificationPanel">
+      <h3>Notifications</h3>
+      {notifications.length === 0 ? (
+        <p>No notifications yet.</p>
+      ) : (
+        notifications.map((n) => (
+          <div key={n.id} className="notificationItem">
+            {n.message}
+          </div>
+        ))
+      )}
+    </div>
+  )}
+</header>
 
       <DropdownSection title="Add a Link🤯" defaultOpen={false}>
   <div className="linkHeader">
