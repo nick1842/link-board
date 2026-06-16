@@ -631,14 +631,28 @@ async function addComment(linkId, text) {
     setTouchStartX(null);
   }
 
-  <button
-  onClick={() =>
-    createNotification("test", "This is a test notification")
-  }
+<button
+  onClick={async () => {
+    const { data, error } = await supabase
+      .from("notifications")
+      .insert({
+        type: "test",
+        message: "Test notification",
+        read: false,
+      });
+
+    console.log("DATA:", data);
+    console.log("ERROR:", error);
+
+    if (error) {
+      alert(error.message);
+    } else {
+      alert("Notification created!");
+    }
+  }}
 >
   Test Notification
 </button>
-
   return (
     <main className="page">
       <header className="hero">
