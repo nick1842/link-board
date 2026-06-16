@@ -351,10 +351,15 @@ export default function Home() {
     await loadLinks();
   }
 
-  async function addReaction(linkId, emoji) {
-  const visitorId = localStorage.getItem("visitor_id");
+async function addReaction(linkId, emoji) {
+  let visitorId = localStorage.getItem("visitor_id");
 
-  const { data: existingReaction } = await supabase
+  if (!visitorId) {
+    visitorId = crypto.randomUUID();
+    localStorage.setItem("visitor_id", visitorId);
+  }
+
+  const { data: existingReaction, error: findError } = await supabase
     .from("reactions")
     .select("*")
     .eq("link_id", linkId)
@@ -362,22 +367,41 @@ export default function Home() {
     .eq("visitor_id", visitorId)
     .maybeSingle();
 
+  if (findError) {
+    console.error("Reaction lookup error:", findError);
+    alert("Reaction lookup failed. Check console.");
+    return;
+  }
+
   if (existingReaction) {
-    await supabase
+    const { error: deleteError } = await supabase
       .from("reactions")
       .delete()
       .eq("id", existingReaction.id);
+
+    if (deleteError) {
+      console.error("Reaction delete error:", deleteError);
+      alert("Reaction delete failed. This is probably a Supabase RLS policy issue.");
+      return;
+    }
   } else {
-    await supabase.from("reactions").insert({
+    const { error: insertError } = await supabase.from("reactions").insert({
       link_id: linkId,
       emoji,
       visitor_id: visitorId,
     });
+
+    if (insertError) {
+      console.error("Reaction insert error:", insertError);
+      alert("Reaction insert failed. Check console.");
+      return;
+    }
   }
 
   await loadLinks();
 }
-  async function addComment(linkId, text) {
+
+async function addComment(linkId, text) {
     if (!text.trim()) return;
 
     await supabase.from("comments").insert({
