@@ -105,8 +105,9 @@ export default function Home() {
 
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
-  const unreadNotifications = notifications.filter((n) => !n.read).length;
-
+  const unreadNotifications = notifications.filter(
+  (n) => n.read === false
+).length;
 useEffect(() => {
   function updateDatingTime() {
     const startDate = new Date("2024-09-21T00:00:00");
@@ -264,6 +265,26 @@ useEffect(() => {
     const { data } = supabase.storage.from(bucket).getPublicUrl(fileName);
     return data.publicUrl;
   }
+  async function clearNotifications() {
+  const confirmed = confirm(
+    "Are you sure you want to clear all notifications?"
+  );
+
+  if (!confirmed) return;
+
+  const { error } = await supabase
+    .from("notifications")
+    .delete()
+    .neq("id", 0);
+
+  if (error) {
+    console.error("Error clearing notifications:", error);
+    alert("Failed to clear notifications.");
+    return;
+  }
+
+  setNotifications([]);
+}
 
   async function loadCategories() {
     const { data, error } = await supabase
@@ -693,10 +714,16 @@ async function addComment(linkId, text) {
 
         {showNotifications && (
           <div className="notificationPanel">
-            <p>Notification Count: {notifications.length}</p>
+  <div className="notificationHeader">
+    <h3>Notifications</h3>
 
-            <h3>Notifications</h3>
-
+    <button
+      className="clearNotificationsBtn"
+      onClick={clearNotifications}
+    >
+      Clear All
+    </button>
+  </div>
             {notifications.length === 0 ? (
               <p>No notifications yet.</p>
             ) : (
@@ -710,7 +737,7 @@ async function addComment(linkId, text) {
         )}
       </header>
 
-      <DropdownSection title="Add a Link🤯" defaultOpen={false}>
+      <DropdownSection title="Add a Link🔗" defaultOpen={false}>
         <div className="linkHeader">
           {linkScreen === "main" ? (
             <button

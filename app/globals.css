@@ -612,4 +612,24 @@ transform: translateY(-1px);
   align-items: center;
   justify-content: center;
 }
+.notificationHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.clearNotificationsBtn {
+  background: #ff4444;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.clearNotificationsBtn:hover {
+  opacity: 0.9;
+}
 }
