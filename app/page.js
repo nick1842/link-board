@@ -266,20 +266,17 @@ useEffect(() => {
     return data.publicUrl;
   }
   async function clearNotifications() {
-  const confirmed = confirm(
-    "Are you sure you want to clear all notifications?"
-  );
-
+  const confirmed = confirm("Are you sure you want to clear all notifications?");
   if (!confirmed) return;
 
   const { error } = await supabase
     .from("notifications")
     .delete()
-    .neq("id", 0);
+    .not("id", "is", null);
 
   if (error) {
     console.error("Error clearing notifications:", error);
-    alert("Failed to clear notifications.");
+    alert(error.message);
     return;
   }
 
