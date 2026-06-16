@@ -57,22 +57,24 @@ export default function MessagesPage() {
   }
 
   async function sendMessage() {
-    if (!messageText.trim()) return;
+  if (!messageText.trim()) return;
 
-    const { error } = await supabase.from("messages").insert({
-      guest_name: guestName.trim() || "Anonymous",
-      message: messageText.trim(),
-      visitor_id: visitorId,
-    });
+  const { error } = await supabase.from("messages").insert({
+    guest_name: guestName.trim() || "Anonymous",
+    message: messageText.trim(),
+    visitor_id: visitorId,
+  });
 
-    if (error) {
-      console.error("Error sending message:", error);
-      alert("Message failed to send.");
-      return;
-    }
-
-    setMessageText("");
+  if (error) {
+    console.error("Error sending message:", error);
+    alert("Message failed to send.");
+    return;
   }
+
+  setMessageText("");
+
+  await loadMessages(); // ADD THIS
+}
 
   function formatTime(dateString) {
     return new Date(dateString).toLocaleTimeString([], {
