@@ -95,10 +95,9 @@ button:hover {
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 18px;
 }
-
 .card {
   background: #11141d;
   border: 1px solid #2a2f3d;
@@ -434,9 +433,95 @@ button:hover {
   }
 
   .grid {
-    grid-template-columns: 1fr;
-  }
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
 
+.card {
+  padding: 10px;
+  border-radius: 14px;
+}
+
+.card img {
+  height: 100px;
+  aspect-ratio: auto;
+  object-fit: cover;
+  margin-bottom: 8px;
+}
+
+.card h2 {
+  font-size: 14px;
+  margin: 6px 0;
+  line-height: 1.2;
+}
+
+.card p {
+  font-size: 11px;
+  line-height: 1.25;
+  max-height: 40px;
+  overflow: hidden;
+}
+
+.category {
+  font-size: 10px;
+  padding: 4px 8px;
+}
+
+.cardTop {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.cardActions {
+  flex-direction: row;
+  width: 100%;
+}
+
+.cardActions button {
+  flex: 1;
+  padding: 6px;
+  font-size: 10px;
+}
+
+.card a {
+  font-size: 12px;
+  margin: 8px 0;
+}
+
+.categorySelect {
+  font-size: 11px;
+  padding: 7px;
+}
+
+.reactions {
+  gap: 4px;
+  justify-content: flex-start;
+}
+
+.reactions button {
+  font-size: 10px;
+  padding: 5px 6px;
+}
+
+.comments {
+  margin-top: 10px;
+  padding-top: 8px;
+}
+
+.comments h3 {
+  font-size: 12px;
+}
+
+.comments p {
+  font-size: 10px;
+}
+
+.comments input,
+.comments button {
+  font-size: 10px;
+  padding: 6px;
+}
   .photoGrid {
     grid-template-columns: repeat(3, 1fr);
   }
@@ -631,44 +716,5 @@ transform: translateY(-1px);
 
 .clearNotificationsBtn:hover {
   opacity: 0.9;
-}
-.password-page {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #184d26;
-}
-
-.password-box {
-  background: white;
-  padding: 30px;
-  border-radius: 20px;
-  text-align: center;
-  width: 90%;
-  max-width: 350px;
-}
-
-.password-box input {
-  width: 100%;
-  padding: 12px;
-  margin: 15px 0;
-  border-radius: 10px;
-  border: 1px solid #ccc;
-}
-
-.password-box button {
-  width: 100%;
-  padding: 12px;
-  border: none;
-  border-radius: 10px;
-  background: #184d26;
-  color: white;
-  font-weight: bold;
-}
-.password-error {
-  color: red;
-  font-size: 14px;
-  margin-bottom: 10px;
 }
 }
