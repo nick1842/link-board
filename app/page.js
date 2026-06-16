@@ -204,6 +204,8 @@ useEffect(() => {
       .select("*")
       .order("created_at", { ascending: false });
 
+      console.log("Notifications loaded:", data);
+
     if (error) {
       console.error("Error loading notifications:", error);
       return;
@@ -631,28 +633,6 @@ async function addComment(linkId, text) {
     setTouchStartX(null);
   }
 
-<button
-  onClick={async () => {
-    const { data, error } = await supabase
-      .from("notifications")
-      .insert({
-        type: "test",
-        message: "Test notification",
-        read: false,
-      });
-
-    console.log("DATA:", data);
-    console.log("ERROR:", error);
-
-    if (error) {
-      alert(error.message);
-    } else {
-      alert("Notification created!");
-    }
-  }}
->
-  Test Notification
-</button>
   return (
     <main className="page">
       <header className="hero">
@@ -676,6 +656,8 @@ async function addComment(linkId, text) {
 
         {showNotifications && (
           <div className="notificationPanel">
+            <p>Notification Count: {notifications.length}</p>
+            
             <h3>Notifications</h3>
 
             {notifications.length === 0 ? (
