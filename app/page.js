@@ -140,10 +140,10 @@ export default function Home() {
   async function loadEverything() {
   await loadCategories();
   await loadLinks();
-  await createNotification(
-  "link",
-  `${guestName || "Someone"} added a new link`
-);
+  await loadAlbums();
+  await loadPhotos();
+  await loadNotifications();
+}
   await loadAlbums();
   await loadPhotos();
   await createNotification(
@@ -276,7 +276,12 @@ async function createNotification(type, message) {
     const fileInput = document.getElementById("linkImageInput");
     if (fileInput) fileInput.value = "";
 
-    loadLinks();
+    await loadLinks();
+
+await createNotification(
+  "link",
+  `${guestName || "Someone"} added a new link`
+);
   }
 
   async function deleteLink(linkId) {
