@@ -109,8 +109,6 @@ export default function Home() {
   (n) => n.read === false
 ).length;
 
-
-}
 useEffect(() => {
   function updateDatingTime() {
     const startDate = new Date("2024-09-21T00:00:00");
@@ -420,7 +418,7 @@ async function addReaction(linkId, emoji) {
   let visitorId = localStorage.getItem("visitor_id");
 
   if (!visitorId) {
-    visitorId = crypto.randomUUID();
+    visitorId = Math.random().toString(36).substring(2, 15);
     localStorage.setItem("visitor_id", visitorId);
   }
 
@@ -1121,9 +1119,10 @@ async function addComment(linkId, text) {
             </div>
           </div>
         </div>
-      )}
+           )}
     </main>
   );
+}
 
 
 function LinkCard({
