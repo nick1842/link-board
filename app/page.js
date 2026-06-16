@@ -136,6 +136,18 @@ useEffect(() => {
   return () => clearInterval(timer);
 }, []);
 
+useEffect(() => {
+  function handleFocus() {
+    checkUnreadMessages();
+  }
+
+  window.addEventListener("focus", handleFocus);
+
+  return () => {
+    window.removeEventListener("focus", handleFocus);
+  };
+}, []);
+
   useEffect(() => {
     loadEverything();
     checkUnreadMessages();
@@ -724,9 +736,13 @@ async function addComment(linkId, text) {
       <header className="hero">
         <div className="heroTop">
           <h1>THE APP</h1>
-          <Link href="/messages" className="messagesHomeButton">
+          <Link
+  href="/messages"
+  className="messagesHomeButton"
+  onClick={() => setHasUnreadMessages(false)}
+>
   {hasUnreadMessages ? "😛" : "💬"}
-          </Link>
+</Link>
 
           <button
   className="bombButton"
