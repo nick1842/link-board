@@ -685,7 +685,7 @@ async function addComment(linkId, text) {
     <main className="page">
       <header className="hero">
         <div className="heroTop">
-          <h1>My Link Board</h1>
+          <h1>THE APP</h1>
 
           <button
   className="bombButton"
