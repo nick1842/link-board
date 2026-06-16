@@ -81,6 +81,7 @@ export default function Home() {
   const [guestName, setGuestName] = useState("");
   const [search, setSearch] = useState("");
   const [linkImageFile, setLinkImageFile] = useState(null);
+  const [linkScreen, setLinkScreen] = useState("main");
 
   const [albums, setAlbums] = useState([]);
   const [photos, setPhotos] = useState([]);
@@ -492,42 +493,96 @@ export default function Home() {
       </header>
 
       <DropdownSection title="Add a Link" defaultOpen={true}>
-        <h2>Add a Link</h2>
+  <div className="linkHeader">
+    {linkScreen === "main" ? (
+      <button className="smallIconButton" onClick={() => setLinkScreen("createCategory")}>
+        +
+      </button>
+    ) : (
+      <button className="backButton" onClick={() => setLinkScreen("main")}>
+        Back
+      </button>
+    )}
 
-        <div className="form">
-          <input value={customName} onChange={(e) => setCustomName(e.target.value)} placeholder="Optional link name" />
+    <h2>
+      {linkScreen === "main" && "Add a Link"}
+      {linkScreen === "createCategory" && "Create Category"}
+      {linkScreen === "searchLinks" && "Search Links"}
+    </h2>
 
-          <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="Paste a link" />
+    {linkScreen === "main" ? (
+      <button className="smallIconButton" onClick={() => setLinkScreen("searchLinks")}>
+        🔍
+      </button>
+    ) : (
+      <div style={{ width: "44px" }} />
+    )}
+  </div>
 
-          <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
-            <option value="">No category</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>{cat.name}</option>
-            ))}
-          </select>
+  {linkScreen === "main" && (
+    <div className="form">
+      <input
+        value={customName}
+        onChange={(e) => setCustomName(e.target.value)}
+        placeholder="Optional link name"
+      />
 
-          <input id="linkImageInput" type="file" accept="image/*" onChange={(e) => setLinkImageFile(e.target.files[0])} />
+      <input
+        value={url}
+        onChange={(e) => setUrl(e.target.value)}
+        placeholder="Paste a link"
+      />
 
-          <button onClick={saveLink} disabled={uploadingLinkImage}>
-            {uploadingLinkImage ? "Uploading..." : "Save Link"}
-          </button>
-        </div>
-      </DropdownSection>
+      <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
+        <option value="">No category</option>
+        {categories.map((cat) => (
+          <option key={cat.id} value={cat.id}>
+            {cat.name}
+          </option>
+        ))}
+      </select>
 
-      <DropdownSection title="Create Category">
-        <h2>Create Category</h2>
+      <input
+        id="linkImageInput"
+        type="file"
+        accept="image/*"
+        onChange={(e) => setLinkImageFile(e.target.files[0])}
+      />
 
-        <div className="form">
-          <input value={newCategory} onChange={(e) => setNewCategory(e.target.value)} placeholder="Example: School, Music, Videos" />
-          <button onClick={createCategory}>Add Category</button>
-        </div>
-      </DropdownSection>
+      <button onClick={saveLink} disabled={uploadingLinkImage}>
+        {uploadingLinkImage ? "Uploading..." : "Save Link"}
+      </button>
+    </div>
+  )}
 
-      <DropdownSection title="Search Links" defaultOpen={true}>
-        <h2>Search Links</h2>
+  {linkScreen === "createCategory" && (
+    <div className="form">
+      <input
+        value={newCategory}
+        onChange={(e) => setNewCategory(e.target.value)}
+        placeholder="Example: School, Music, Videos"
+      />
 
-        <input className="fullInput" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name, category, URL, or description" />
-      </DropdownSection>
+      <button
+        onClick={() => {
+          createCategory();
+          setLinkScreen("main");
+        }}
+      >
+        Add Category
+      </button>
+    </div>
+  )}
+
+  {linkScreen === "searchLinks" && (
+    <input
+      className="fullInput"
+      value={search}
+      onChange={(e) => setSearch(e.target.value)}
+      placeholder="Search by name, category, URL, or description"
+    />
+  )}
+</DropdownSection>
 
 <DropdownSection title="Photos" defaultOpen={true}>
   <div className="photosHeader">
