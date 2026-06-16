@@ -30,16 +30,16 @@ export default function MessagesPage() {
           schema: "public",
           table: "messages",
         },
-        (payload) => {
-          setMessages((currentMessages) => {
-            const alreadyExists = currentMessages.some(
-              (msg) => msg.id === payload.new.id
-            );
+        async (payload) => {
+          console.log("Realtime new message:", payload);
 
-            if (alreadyExists) return currentMessages;
+          await loadMessages();
 
-            return [...currentMessages, payload.new];
-          });
+          setTimeout(() => {
+            bottomRef.current?.scrollIntoView({
+              behavior: "smooth",
+            });
+          }, 100);
         }
       )
       .subscribe((status) => {
