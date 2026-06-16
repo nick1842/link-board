@@ -109,53 +109,7 @@ export default function Home() {
   (n) => n.read === false
 ).length;
 
-const [enteredPassword, setEnteredPassword] = useState("");
-const [unlocked, setUnlocked] = useState(false);
-const [passwordError, setPasswordError] = useState("");
 
-const SITE_PASSWORD = "yourpassword";
-
-if (!unlocked) {
-  return (
-    <main className="password-page">
-      <div className="password-box">
-        <h1>Enter Password</h1>
-
-        <input
-          type="password"
-          placeholder="Password"
-          value={enteredPassword}
-          onChange={(e) => setEnteredPassword(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              if (enteredPassword === SITE_PASSWORD) {
-                setUnlocked(true);
-                setPasswordError("");
-              } else {
-                setPasswordError("Wrong password");
-              }
-            }
-          }}
-        />
-
-        {passwordError && <p className="password-error">{passwordError}</p>}
-
-        <button
-          type="button"
-          onClick={() => {
-            if (enteredPassword === SITE_PASSWORD) {
-              setUnlocked(true);
-              setPasswordError("");
-            } else {
-              setPasswordError("Wrong password");
-            }
-          }}
-        >
-          Unlock
-        </button>
-      </div>
-    </main>
-  );
 }useEffect(() => {
   function updateDatingTime() {
     const startDate = new Date("2024-09-21T00:00:00");
@@ -1169,7 +1123,7 @@ async function addComment(linkId, text) {
       )}
     </main>
   );
-}
+
 
 function LinkCard({
   link,
