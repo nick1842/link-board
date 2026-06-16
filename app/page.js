@@ -230,8 +230,27 @@ useEffect(() => {
       return;
     }
 
+    await sendEmailNotification("New Notification", message);
+
     await loadNotifications();
   }
+  async function sendEmailNotification(subject, message) {
+  const res = await fetch("/api/send-email", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      to: "Nick@myhmbiz.com",
+      subject,
+      message,
+    }),
+  });
+
+  if (!res.ok) {
+    console.error("Failed to send email notification");
+  }
+}
   async function markNotificationsRead() {
   const { error } = await supabase
     .from("notifications")
