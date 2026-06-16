@@ -354,18 +354,13 @@ export default function Home() {
   async function addReaction(linkId, emoji) {
   const visitorId = localStorage.getItem("visitor_id");
 
-  const { data: existingReaction, error: findError } = await supabase
+  const { data: existingReaction } = await supabase
     .from("reactions")
     .select("*")
     .eq("link_id", linkId)
     .eq("emoji", emoji)
     .eq("visitor_id", visitorId)
     .maybeSingle();
-
-  if (findError) {
-    console.error("Reaction lookup error:", findError);
-    return;
-  }
 
   if (existingReaction) {
     await supabase
