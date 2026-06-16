@@ -831,8 +831,16 @@ export default function Home() {
               ))}
             </select>
 
-            <div className="photoGrid">
-              {filteredPhotos.map((photo, index) => (
+            <div
+  className="photoGrid"
+  style={{
+    maxHeight: "70vh",
+    overflowY: "auto",
+    overflowX: "hidden",
+    paddingRight: "8px",
+  }}
+>
+  {filteredPhotos.map((photo, index) => (
                 <div className="photoCard" key={photo.id}>
                   <div className="photoMenuWrap">
                     <button
