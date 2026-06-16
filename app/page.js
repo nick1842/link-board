@@ -1035,11 +1035,30 @@ function LinkCard({
   onChangeCategory,
 }) {
   const [comment, setComment] = useState("");
+  const [customEmojiOpen, setCustomEmojiOpen] = useState(false);
+  const [customEmoji, setCustomEmoji] = useState("");
+
+  const presetEmojis = ["👍", "❤️", "😂", "🔥"];
 
   const reactionCounts = {};
   link.reactions?.forEach((r) => {
     reactionCounts[r.emoji] = (reactionCounts[r.emoji] || 0) + 1;
   });
+
+  const customEmojis = Object.keys(reactionCounts).filter(
+    (emoji) => !presetEmojis.includes(emoji)
+  );
+
+  function submitCustomEmoji(e) {
+    e.preventDefault();
+
+    const emoji = customEmoji.trim();
+    if (!emoji) return;
+
+    onReact(link.id, emoji);
+    setCustomEmoji("");
+    setCustomEmojiOpen(false);
+  }
 
   return (
     <div className="card">
@@ -1080,26 +1099,37 @@ function LinkCard({
       </select>
 
       <div className="reactions">
-  {["👍", "❤️", "😂", "🔥"].map((emoji) => (
-    <button key={emoji} onClick={() => onReact(link.id, emoji)}>
-      {emoji} {reactionCounts[emoji] || 0}
-    </button>
-  ))}
+        {presetEmojis.map((emoji) => (
+          <button key={emoji} onClick={() => onReact(link.id, emoji)}>
+            {emoji} {reactionCounts[emoji] || 0}
+          </button>
+        ))}
 
-  <button
-    onClick={() => {
-      const customEmoji = prompt("Type or paste an emoji:");
-      if (!customEmoji) return;
+        {customEmojis.map((emoji) => (
+          <button key={emoji} onClick={() => onReact(link.id, emoji)}>
+            {emoji} {reactionCounts[emoji] || 0}
+          </button>
+        ))}
 
-      const emoji = customEmoji.trim();
-      if (!emoji) return;
+        <button onClick={() => setCustomEmojiOpen(!customEmojiOpen)}>
+          ➕
+        </button>
+      </div>
 
-      onReact(link.id, emoji);
-    }}
-  >
-    ➕ Emoji
-  </button>
-</div>
+      {customEmojiOpen && (
+        <form className="emojiForm" onSubmit={submitCustomEmoji}>
+          <input
+            autoFocus
+            value={customEmoji}
+            onChange={(e) => setCustomEmoji(e.target.value)}
+            placeholder="Pick emoji"
+            maxLength={4}
+          />
+
+          <button type="submit">React</button>
+        </form>
+      )}
+
       <div className="comments">
         <h3>Comments</h3>
 
