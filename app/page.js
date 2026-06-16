@@ -412,35 +412,43 @@ async function addReaction(linkId, emoji) {
       alert("Reaction delete failed. This is probably a Supabase RLS policy issue.");
       return;
     }
-  } else {
-    const { error: insertError } = await supabase.from("reactions").insert({
-      link_id: linkId,
-      emoji,
-      visitor_id: visitorId,
-    });
+  } 
+  else {
+  const { error: insertError } = await supabase.from("reactions").insert({
+    link_id: linkId,
+    emoji,
+    visitor_id: visitorId,
+  });
 
-    if (insertError) {
-      console.error("Reaction insert error:", insertError);
-      alert("Reaction insert failed. Check console.");
-      return;
-    }
+  if (insertError) {
+    console.error("Reaction insert error:", insertError);
+    alert("Reaction insert failed. Check console.");
+    return;
   }
 
+  await createNotification(
+    "reaction",
+    `${guestName.trim() || "Someone"} reacted ${emoji} to a link`
+  );
+}
   await loadLinks();
 }
 
 async function addComment(linkId, text) {
-    if (!text.trim()) return;
+  if (!text.trim()) return;
 
-    await supabase.from("comments").insert({
-      link_id: linkId,
-      guest_name: guestName.trim() || "Anonymous",
-      comment: text.trim(),
-    });
+  const name = guestName.trim() || "Anonymous";
 
-    await loadLinks();
-  }
+  await supabase.from("comments").insert({
+    link_id: linkId,
+    guest_name: name,
+    comment: text.trim(),
+  });
 
+  await createNotification("comment", `${name} commented on a link`);
+
+  await loadLinks();
+}
   async function loadAlbums() {
     const { data, error } = await supabase
       .from("albums")
@@ -452,20 +460,25 @@ async function addComment(linkId, text) {
   }
 
   async function createAlbum() {
-    if (!newAlbum.trim()) return;
+  if (!newAlbum.trim()) return;
 
-    const { error } = await supabase.from("albums").insert({
-      name: newAlbum.trim(),
-    });
+  const { error } = await supabase.from("albums").insert({
+    name: newAlbum.trim(),
+  });
 
-    if (error) {
-      alert("There was an error creating the album.");
-      return;
-    }
-
-    setNewAlbum("");
-    await loadAlbums();
+  if (error) {
+    alert("There was an error creating the album.");
+    return;
   }
+
+  await createNotification(
+    "album",
+    `${guestName.trim() || "Someone"} created album "${newAlbum.trim()}"`
+  );
+
+  setNewAlbum("");
+  await loadAlbums();
+}
 
   async function loadPhotos() {
     const { data, error } = await supabase
@@ -643,7 +656,7 @@ async function addComment(linkId, text) {
             className="bombButton"
             onClick={() => setShowNotifications(!showNotifications)}
           >
-            💣
+            💣 {notifications.length > 0 && `(${notifications.length})`}
           </button>
         </div>
 
@@ -657,7 +670,7 @@ async function addComment(linkId, text) {
         {showNotifications && (
           <div className="notificationPanel">
             <p>Notification Count: {notifications.length}</p>
-            
+
             <h3>Notifications</h3>
 
             {notifications.length === 0 ? (
