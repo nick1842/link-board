@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 
 function cleanUrl(url) {
   if (!url) return "";
-  return url.startsWith("http://") || url.startsWith("https://") ? url : `https://${url}`;
+  return url.startsWith("http://") || url.startsWith("https://")
+    ? url
+    : `https://${url}`;
 }
 
 function safeFileName(file) {
@@ -104,25 +106,23 @@ export default function Home() {
   const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
-  loadEverything();
+    loadEverything();
 
-  let id = localStorage.getItem("visitor_id");
-  if (!id) {
-    id = crypto.randomUUID();
-    localStorage.setItem("visitor_id", id);
-  }
+    let id = localStorage.getItem("visitor_id");
+    if (!id) {
+      id = crypto.randomUUID();
+      localStorage.setItem("visitor_id", id);
+    }
 
-  // Auto refresh every minute
-  const refreshInterval = setInterval(() => {
-    loadPhotos();
-    loadAlbums();
-    loadLinks();
-  }, 60000);
+    const refreshInterval = setInterval(() => {
+      loadPhotos();
+      loadAlbums();
+      loadLinks();
+      loadNotifications();
+    }, 60000);
 
-  return () => {
-    clearInterval(refreshInterval);
-  };
-}, []);
+    return () => clearInterval(refreshInterval);
+  }, []);
 
   useEffect(() => {
     function handleKeyDown(e) {
@@ -137,46 +137,71 @@ export default function Home() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [viewerIndex, photos, selectedAlbum]);
 
+  const filteredLinks = useMemo(() => {
+    const q = search.trim().toLowerCase();
+
+    if (!q) return links;
+
+    return links.filter((link) => {
+      return (
+        link.url?.toLowerCase().includes(q) ||
+        link.title?.toLowerCase().includes(q) ||
+        link.custom_name?.toLowerCase().includes(q) ||
+        link.description?.toLowerCase().includes(q) ||
+        link.categories?.name?.toLowerCase().includes(q)
+      );
+    });
+  }, [links, search]);
+
+  const filteredPhotos = useMemo(() => {
+    if (selectedAlbum === "ALL") return photos;
+
+    return photos.filter((photo) =>
+      photo.photo_albums?.some((pa) => pa.album_id === selectedAlbum)
+    );
+  }, [photos, selectedAlbum]);
+
+  const currentPhoto =
+    viewerIndex === null ? null : filteredPhotos[viewerIndex] || null;
+
   async function loadEverything() {
-  await loadCategories();
-  await loadLinks();
-  await loadAlbums();
-  await loadPhotos();
-  await loadNotifications();
-}
-
-
-async function loadNotifications() {
-  const { data, error } = await supabase
-    .from("notifications")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    console.error("Error loading notifications:", error);
-    return;
+    await loadCategories();
+    await loadLinks();
+    await loadAlbums();
+    await loadPhotos();
+    await loadNotifications();
   }
 
-  setNotifications(data || []);
-}
+  async function loadNotifications() {
+    const { data, error } = await supabase
+      .from("notifications")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-async function createNotification(type, message) {
-  const { error } = await supabase.from("notifications").insert([
-    {
-      type,
-      message,
-      read: false,
-    },
-  ]);
+    if (error) {
+      console.error("Error loading notifications:", error);
+      return;
+    }
 
-  if (error) {
-    console.error("Error creating notification:", error);
-    alert("Notification failed. Check Supabase RLS/policies.");
-    return;
+    setNotifications(data || []);
   }
 
-  await loadNotifications();
-}
+  async function createNotification(type, message) {
+    const { error } = await supabase.from("notifications").insert([
+      {
+        type,
+        message,
+        read: false,
+      },
+    ]);
+
+    if (error) {
+      console.error("Error creating notification:", error);
+      return;
+    }
+
+    await loadNotifications();
+  }
 
   async function uploadToBucket(bucket, file) {
     if (!file) return null;
@@ -184,7 +209,9 @@ async function createNotification(type, message) {
     const compressedFile = await compressImage(file);
     const fileName = safeFileName(compressedFile);
 
-    const { error } = await supabase.storage.from(bucket).upload(fileName, compressedFile);
+    const { error } = await supabase.storage
+      .from(bucket)
+      .upload(fileName, compressedFile);
 
     if (error) {
       console.error("Upload error:", error);
@@ -219,7 +246,7 @@ async function createNotification(type, message) {
     }
 
     setNewCategory("");
-    loadCategories();
+    await loadCategories();
   }
 
   async function loadLinks() {
@@ -232,74 +259,79 @@ async function createNotification(type, message) {
     setLinks(data || []);
   }
 
-async function saveLink() {
-  if (!url.trim()) return;
+  async function saveLink() {
+    if (!url.trim()) return;
 
-  setUploadingLinkImage(true);
+    setUploadingLinkImage(true);
 
-  try {
-    const finalUrl = cleanUrl(url.trim());
+    try {
+      const finalUrl = cleanUrl(url.trim());
 
-    const previewRes = await fetch("/api/preview", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ url: finalUrl }),
-    });
+      const previewRes = await fetch("/api/preview", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ url: finalUrl }),
+      });
 
-    const preview = await previewRes.json();
-    const uploadedImageUrl = await uploadToBucket("link-images", linkImageFile);
+      const preview = await previewRes.json();
+      const uploadedImageUrl = await uploadToBucket("link-images", linkImageFile);
 
-    const { error } = await supabase.from("links").insert([
-      {
-        url: finalUrl,
-        custom_name: customName.trim() || null,
-        category_id: categoryId || null,
-        title: preview.title,
-        description: preview.description,
-        image: preview.image,
-        custom_image: uploadedImageUrl,
-      },
-    ]);
+      const { error } = await supabase.from("links").insert([
+        {
+          url: finalUrl,
+          custom_name: customName.trim() || null,
+          category_id: categoryId || null,
+          title: preview.title,
+          description: preview.description,
+          image: preview.image,
+          custom_image: uploadedImageUrl,
+        },
+      ]);
 
-    if (error) {
-      console.error("Link save error:", error);
-      alert("There was an error saving the link.");
-      return;
+      if (error) {
+        console.error("Link save error:", error);
+        alert("There was an error saving the link.");
+        return;
+      }
+
+      await createNotification(
+        "link",
+        `${guestName || "Someone"} added a new link`
+      );
+
+      setUrl("");
+      setCustomName("");
+      setCategoryId("");
+      setLinkImageFile(null);
+
+      const fileInput = document.getElementById("linkImageInput");
+      if (fileInput) fileInput.value = "";
+
+      await loadLinks();
+      await loadNotifications();
+    } catch (err) {
+      console.error("Save link failed:", err);
+      alert("Save link failed. Check the console.");
+    } finally {
+      setUploadingLinkImage(false);
     }
-
-    await createNotification(
-      "link",
-      `${guestName || "Someone"} added a new link`
-    );
-
-    setUrl("");
-    setCustomName("");
-    setCategoryId("");
-    setLinkImageFile(null);
-
-    const fileInput = document.getElementById("linkImageInput");
-    if (fileInput) fileInput.value = "";
-
-    await loadLinks();
-    await loadNotifications();
-  } catch (err) {
-    console.error("Save link failed:", err);
-    alert("Save link failed. Check the console.");
-  } finally {
-    setUploadingLinkImage(false);
   }
-}
 
   async function deleteLink(linkId) {
     if (!confirm("Delete this link?")) return;
+
     await supabase.from("links").delete().eq("id", linkId);
-    loadLinks();
+    await loadLinks();
   }
 
   async function editLinkName(link) {
-    const newName = prompt("Enter a new name:", link.custom_name || link.title || "");
+    const newName = prompt(
+      "Enter a new name:",
+      link.custom_name || link.title || ""
+    );
+
     if (newName === null) return;
 
     await supabase
@@ -307,7 +339,7 @@ async function saveLink() {
       .update({ custom_name: newName.trim() || null })
       .eq("id", link.id);
 
-    loadLinks();
+    await loadLinks();
   }
 
   async function changeLinkCategory(linkId, newCategoryId) {
@@ -316,7 +348,7 @@ async function saveLink() {
       .update({ category_id: newCategoryId || null })
       .eq("id", linkId);
 
-    loadLinks();
+    await loadLinks();
   }
 
   async function addReaction(linkId, emoji) {
@@ -328,7 +360,7 @@ async function saveLink() {
       visitor_id: visitorId,
     });
 
-    loadLinks();
+    await loadLinks();
   }
 
   async function addComment(linkId, text) {
@@ -340,7 +372,7 @@ async function saveLink() {
       comment: text.trim(),
     });
 
-    loadLinks();
+    await loadLinks();
   }
 
   async function loadAlbums() {
@@ -366,7 +398,7 @@ async function saveLink() {
     }
 
     setNewAlbum("");
-    loadAlbums();
+    await loadAlbums();
   }
 
   async function loadPhotos() {
@@ -387,52 +419,66 @@ async function saveLink() {
 
     setUploadingPhoto(true);
 
-    for (const file of photoFiles) {
-      const uploadedPhotoUrl = await uploadToBucket("photos", file);
-      if (!uploadedPhotoUrl) continue;
+    try {
+      for (const file of photoFiles) {
+        const uploadedPhotoUrl = await uploadToBucket("photos", file);
+        if (!uploadedPhotoUrl) continue;
 
-      const { data: newPhoto, error } = await supabase
-        .from("photos")
-        .insert({
-          image_url: uploadedPhotoUrl,
-          caption: photoCaption.trim() || null,
-          album_id: photoAlbumId || null,
-        })
-        .select()
-        .single();
+        const { data: newPhoto, error } = await supabase
+          .from("photos")
+          .insert({
+            image_url: uploadedPhotoUrl,
+            caption: photoCaption.trim() || null,
+            album_id: photoAlbumId || null,
+          })
+          .select()
+          .single();
 
-      if (error) {
-        console.error("Photo save error:", error);
-        continue;
+        if (error) {
+          console.error("Photo insert error:", error);
+          continue;
+        }
+
+        if (photoAlbumId && newPhoto?.id) {
+          await supabase.from("photo_albums").insert({
+            photo_id: newPhoto.id,
+            album_id: photoAlbumId,
+          });
+        }
       }
 
-      if (photoAlbumId) {
-        await supabase.from("photo_albums").insert({
-          photo_id: newPhoto.id,
-          album_id: photoAlbumId,
-        });
-      }
+      await createNotification(
+        "photo",
+        `${guestName || "Someone"} uploaded photo(s)`
+      );
+
+      setPhotoFiles([]);
+      setPhotoCaption("");
+      setPhotoAlbumId("");
+
+      const input = document.getElementById("photoUploadInput");
+      if (input) input.value = "";
+
+      await loadPhotos();
+      await loadAlbums();
+    } catch (err) {
+      console.error("Photo upload failed:", err);
+      alert("Photo upload failed. Check the console.");
+    } finally {
+      setUploadingPhoto(false);
     }
-
-    setUploadingPhoto(false);
-    setPhotoFiles([]);
-    setPhotoCaption("");
-    setPhotoAlbumId("");
-
-    const fileInput = document.getElementById("photoUploadInput");
-    if (fileInput) fileInput.value = "";
-
-    loadPhotos();
   }
 
   async function deletePhoto(photoId) {
     if (!confirm("Delete this photo?")) return;
 
+    await supabase.from("photo_albums").delete().eq("photo_id", photoId);
     await supabase.from("photos").delete().eq("id", photoId);
 
     setOpenPhotoMenu(null);
-    closeViewer();
-    loadPhotos();
+    setViewerIndex(null);
+
+    await loadPhotos();
   }
 
   async function addPhotoToAlbum(photoId) {
@@ -441,65 +487,45 @@ async function saveLink() {
       return;
     }
 
-    const albumList = albums
-      .map((album, index) => `${index + 1}. ${album.name}`)
-      .join("\n");
+    const albumName = prompt(
+      `Type the album name:\n\n${albums.map((a) => a.name).join("\n")}`
+    );
 
-    const choice = prompt(`Choose an album number:\n\n${albumList}`);
-    if (!choice) return;
+    if (!albumName) return;
 
-    const selected = albums[Number(choice) - 1];
+    const album = albums.find(
+      (a) => a.name.toLowerCase() === albumName.trim().toLowerCase()
+    );
 
-    if (!selected) {
-      alert("Invalid album number.");
+    if (!album) {
+      alert("Album not found.");
       return;
     }
 
     const { error } = await supabase.from("photo_albums").insert({
       photo_id: photoId,
-      album_id: selected.id,
+      album_id: album.id,
     });
 
     if (error) {
-      alert("That photo may already be in that album.");
+      console.error("Add to album error:", error);
+      alert("Could not add photo to album.");
       return;
     }
 
     setOpenPhotoMenu(null);
-    loadPhotos();
+    await loadPhotos();
   }
 
   function downloadPhoto(photo) {
-    const link = document.createElement("a");
-    link.href = photo.image_url;
-    link.download = photo.caption || "photo";
-    link.target = "_blank";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    setOpenPhotoMenu(null);
+    const a = document.createElement("a");
+    a.href = photo.image_url;
+    a.download = "photo.jpg";
+    a.target = "_blank";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   }
-
-  const filteredLinks = links.filter((link) => {
-    const allText = `
-      ${link.custom_name || ""}
-      ${link.title || ""}
-      ${link.description || ""}
-      ${link.url || ""}
-      ${link.categories?.name || ""}
-    `.toLowerCase();
-
-    return allText.includes(search.toLowerCase());
-  });
-
-  const filteredPhotos =
-    selectedAlbum === "ALL"
-      ? photos
-      : photos.filter((photo) =>
-          photo.photo_albums?.some((pa) => pa.album_id === selectedAlbum)
-        );
-
-  const currentPhoto = viewerIndex !== null ? filteredPhotos[viewerIndex] : null;
 
   function openViewer(index) {
     setViewerIndex(index);
@@ -514,17 +540,17 @@ async function saveLink() {
   function nextPhoto() {
     if (filteredPhotos.length === 0) return;
     setViewerIndex((prev) =>
-      prev === null ? 0 : prev === filteredPhotos.length - 1 ? 0 : prev + 1
+      prev === null ? 0 : (prev + 1) % filteredPhotos.length
     );
-    setOpenPhotoMenu(null);
   }
 
   function previousPhoto() {
     if (filteredPhotos.length === 0) return;
     setViewerIndex((prev) =>
-      prev === null ? 0 : prev === 0 ? filteredPhotos.length - 1 : prev - 1
+      prev === null
+        ? 0
+        : (prev - 1 + filteredPhotos.length) % filteredPhotos.length
     );
-    setOpenPhotoMenu(null);
   }
 
   function handleTouchEnd(e) {
@@ -533,8 +559,10 @@ async function saveLink() {
     const touchEndX = e.changedTouches[0].clientX;
     const diff = touchStartX - touchEndX;
 
-    if (diff > 50) nextPhoto();
-    if (diff < -50) previousPhoto();
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) nextPhoto();
+      else previousPhoto();
+    }
 
     setTouchStartX(null);
   }
@@ -542,312 +570,330 @@ async function saveLink() {
   return (
     <main className="page">
       <header className="hero">
-  <div className="heroTop">
-    <h1>My Link Board</h1>
+        <div className="heroTop">
+          <h1>My Link Board</h1>
 
-    <button
-      className="bombButton"
-      onClick={() => setShowNotifications(!showNotifications)}
-    >
-      💣
-    </button>
-  </div>
+          <button
+            className="bombButton"
+            onClick={() => setShowNotifications(!showNotifications)}
+          >
+            💣
+          </button>
+        </div>
 
-  <p>
-    Save links, upload photos, organize albums, and let people comment.
-  </p>
+        <p>Save links, upload photos, organize albums, and let people comment.</p>
 
-  {showNotifications && (
-    <div className="notificationPanel">
-      <h3>Notifications</h3>
-      {notifications.length === 0 ? (
-        <p>No notifications yet.</p>
-      ) : (
-        notifications.map((n) => (
-          <div key={n.id} className="notificationItem">
-            {n.message}
+        {showNotifications && (
+          <div className="notificationPanel">
+            <h3>Notifications</h3>
+
+            {notifications.length === 0 ? (
+              <p>No notifications yet.</p>
+            ) : (
+              notifications.map((n) => (
+                <div key={n.id} className="notificationItem">
+                  {n.message}
+                </div>
+              ))
+            )}
           </div>
-        ))
-      )}
-    </div>
-  )}
-</header>
+        )}
+      </header>
 
       <DropdownSection title="Add a Link🤯" defaultOpen={false}>
-  <div className="linkHeader">
-    {linkScreen === "main" ? (
-      <button className="smallIconButton" onClick={() => setLinkScreen("createCategory")}>
-        +
-      </button>
-    ) : (
-      <button className="backButton" onClick={() => setLinkScreen("main")}>
-        Back
-      </button>
-    )}
-
-    <h2>
-      {linkScreen === "main" && "Add a Link"}
-      {linkScreen === "createCategory" && "Create Category"}
-      {linkScreen === "searchLinks" && "Search Links"}
-    </h2>
-
-    {linkScreen === "main" ? (
-      <button className="smallIconButton" onClick={() => setLinkScreen("searchLinks")}>
-        🔍
-      </button>
-    ) : (
-      <div style={{ width: "44px" }} />
-    )}
-  </div>
-
-  {linkScreen === "main" && (
-    <div className="form">
-      <input
-        value={customName}
-        onChange={(e) => setCustomName(e.target.value)}
-        placeholder="Optional link name"
-      />
-
-      <input
-        value={url}
-        onChange={(e) => setUrl(e.target.value)}
-        placeholder="Paste a link"
-      />
-
-      <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
-        <option value="">No category</option>
-        {categories.map((cat) => (
-          <option key={cat.id} value={cat.id}>
-            {cat.name}
-          </option>
-        ))}
-      </select>
-
-      <input
-        id="linkImageInput"
-        type="file"
-        accept="image/*"
-        onChange={(e) => setLinkImageFile(e.target.files[0])}
-      />
-
-      <button onClick={saveLink} disabled={uploadingLinkImage}>
-        {uploadingLinkImage ? "Uploading..." : "Save Link"}
-      </button>
-    </div>
-  )}
-
-  {linkScreen === "createCategory" && (
-    <div className="form">
-      <input
-        value={newCategory}
-        onChange={(e) => setNewCategory(e.target.value)}
-        placeholder="Example: School, Music, Videos"
-      />
-
-      <button
-        onClick={() => {
-          createCategory();
-          setLinkScreen("main");
-        }}
-      >
-        Add Category
-      </button>
-    </div>
-  )}
-
-  {linkScreen === "searchLinks" && (
-    <input
-      className="fullInput"
-      value={search}
-      onChange={(e) => setSearch(e.target.value)}
-      placeholder="Search by name, category, URL, or description"
-    />
-  )}
-</DropdownSection>
-
-<DropdownSection title="Photos🤩" defaultOpen={false}>
-  <div className="photosHeader">
-    <h2>
-      {photoScreen === "main" && "Photos"}
-      {photoScreen === "createAlbum" && "Create Album"}
-      {photoScreen === "uploadPhotos" && "Upload Photos"}
-    </h2>
-
-    {photoScreen === "main" ? (
-      <div className="plusMenuWrap">
-        <button
-          className="plusButton"
-          onClick={() => setShowPhotoTools(!showPhotoTools)}
-        >
-          +
-        </button>
-
-        {showPhotoTools && (
-          <div className="plusMenu">
+        <div className="linkHeader">
+          {linkScreen === "main" ? (
             <button
-              onClick={() => {
-                setPhotoScreen("createAlbum");
-                setShowPhotoTools(false);
-              }}
+              className="smallIconButton"
+              onClick={() => setLinkScreen("createCategory")}
             >
-              Create Album
+              +
             </button>
+          ) : (
+            <button className="backButton" onClick={() => setLinkScreen("main")}>
+              Back
+            </button>
+          )}
 
+          <h2>
+            {linkScreen === "main" && "Add a Link"}
+            {linkScreen === "createCategory" && "Create Category"}
+            {linkScreen === "searchLinks" && "Search Links"}
+          </h2>
+
+          {linkScreen === "main" ? (
             <button
-              onClick={() => {
-                setPhotoScreen("uploadPhotos");
-                setShowPhotoTools(false);
-              }}
+              className="smallIconButton"
+              onClick={() => setLinkScreen("searchLinks")}
             >
-              Upload Photos
+              🔍
+            </button>
+          ) : (
+            <div style={{ width: "44px" }} />
+          )}
+        </div>
+
+        {linkScreen === "main" && (
+          <div className="form">
+            <input
+              value={customName}
+              onChange={(e) => setCustomName(e.target.value)}
+              placeholder="Optional link name"
+            />
+
+            <input
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="Paste a link"
+            />
+
+            <select
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+            >
+              <option value="">No category</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+
+            <input
+              id="linkImageInput"
+              type="file"
+              accept="image/*"
+              onChange={(e) => setLinkImageFile(e.target.files[0])}
+            />
+
+            <button onClick={saveLink} disabled={uploadingLinkImage}>
+              {uploadingLinkImage ? "Uploading..." : "Save Link"}
             </button>
           </div>
         )}
-      </div>
-    ) : (
-      <button className="backButton" onClick={() => setPhotoScreen("main")}>
-        Back
-      </button>
-    )}
-  </div>
 
-  {photoScreen === "createAlbum" && (
-    <div className="photoTools">
-      <div className="form">
-        <input
-          value={newAlbum}
-          onChange={(e) => setNewAlbum(e.target.value)}
-          placeholder="Example: Vacation, Friends, School"
-        />
+        {linkScreen === "createCategory" && (
+          <div className="form">
+            <input
+              value={newCategory}
+              onChange={(e) => setNewCategory(e.target.value)}
+              placeholder="Example: School, Music, Videos"
+            />
 
-        <button
-          onClick={() => {
-            createAlbum();
-            setPhotoScreen("main");
-          }}
-        >
-          Add Album
-        </button>
-      </div>
-    </div>
-  )}
+            <button
+              onClick={async () => {
+                await createCategory();
+                setLinkScreen("main");
+              }}
+            >
+              Add Category
+            </button>
+          </div>
+        )}
 
-  {photoScreen === "uploadPhotos" && (
-    <div className="photoTools">
-      <div className="form">
-        <input
-          id="photoUploadInput"
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={(e) => setPhotoFiles(Array.from(e.target.files))}
-        />
+        {linkScreen === "searchLinks" && (
+          <input
+            className="fullInput"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name, category, URL, or description"
+          />
+        )}
+      </DropdownSection>
 
-        <input
-          value={photoCaption}
-          onChange={(e) => setPhotoCaption(e.target.value)}
-          placeholder="Optional caption for all selected photos"
-        />
+      <DropdownSection title="Photos🤩" defaultOpen={false}>
+        <div className="photosHeader">
+          <h2>
+            {photoScreen === "main" && "Photos"}
+            {photoScreen === "createAlbum" && "Create Album"}
+            {photoScreen === "uploadPhotos" && "Upload Photos"}
+          </h2>
 
-        <select
-          value={photoAlbumId}
-          onChange={(e) => setPhotoAlbumId(e.target.value)}
-        >
-          <option value="">Only ALL album</option>
-          {albums.map((album) => (
-            <option key={album.id} value={album.id}>
-              Also add to {album.name}
-            </option>
-          ))}
-        </select>
-
-        <button
-          onClick={async () => {
-            await uploadPhoto();
-            setPhotoScreen("main");
-          }}
-          disabled={uploadingPhoto}
-        >
-          {uploadingPhoto
-            ? "Compressing & Uploading..."
-            : `Upload ${
-                photoFiles.length > 1
-                  ? photoFiles.length + " Photos"
-                  : "Photo"
-              }`}
-        </button>
-      </div>
-    </div>
-  )}
-
-  {photoScreen === "main" && (
-    <>
-      <select
-        className="fullInput"
-        value={selectedAlbum}
-        onChange={(e) => setSelectedAlbum(e.target.value)}
-      >
-        <option value="ALL">ALL</option>
-        {albums.map((album) => (
-          <option key={album.id} value={album.id}>
-            {album.name}
-          </option>
-        ))}
-      </select>
-
-      <div className="photoGrid">
-        {filteredPhotos.map((photo, index) => (
-          <div className="photoCard" key={photo.id}>
-            <div className="photoMenuWrap">
+          {photoScreen === "main" ? (
+            <div className="plusMenuWrap">
               <button
-                className="photoMenuButton"
-                onClick={() =>
-                  setOpenPhotoMenu(openPhotoMenu === photo.id ? null : photo.id)
-                }
+                className="plusButton"
+                onClick={() => setShowPhotoTools(!showPhotoTools)}
               >
-                ⋯
+                +
               </button>
 
-              {openPhotoMenu === photo.id && (
-                <div className="photoMenu">
-                  <button onClick={() => downloadPhoto(photo)}>Download</button>
-                  <button onClick={() => addPhotoToAlbum(photo.id)}>
-                    Add to Album
-                  </button>
+              {showPhotoTools && (
+                <div className="plusMenu">
                   <button
-                    className="deleteBtn"
-                    onClick={() => deletePhoto(photo.id)}
+                    onClick={() => {
+                      setPhotoScreen("createAlbum");
+                      setShowPhotoTools(false);
+                    }}
                   >
-                    Delete
+                    Create Album
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setPhotoScreen("uploadPhotos");
+                      setShowPhotoTools(false);
+                    }}
+                  >
+                    Upload Photos
                   </button>
                 </div>
               )}
             </div>
+          ) : (
+            <button className="backButton" onClick={() => setPhotoScreen("main")}>
+              Back
+            </button>
+          )}
+        </div>
 
-            <img
-              src={photo.image_url}
-              alt=""
-              onClick={() => openViewer(index)}
-            />
+        {photoScreen === "createAlbum" && (
+          <div className="photoTools">
+            <div className="form">
+              <input
+                value={newAlbum}
+                onChange={(e) => setNewAlbum(e.target.value)}
+                placeholder="Example: Vacation, Friends, School"
+              />
 
-            <p>{photo.caption || "No caption"}</p>
-
-            <span>
-              Albums:{" "}
-              {photo.photo_albums?.length
-                ? [
-                    "ALL",
-                    ...photo.photo_albums.map((pa) => pa.albums?.name),
-                  ].join(", ")
-                : "ALL"}
-            </span>
+              <button
+                onClick={async () => {
+                  await createAlbum();
+                  setPhotoScreen("main");
+                }}
+              >
+                Add Album
+              </button>
+            </div>
           </div>
-        ))}
-      </div>
-    </>
-  )}
-</DropdownSection>      
-<input className="nameInput" value={guestName} onChange={(e) => setGuestName(e.target.value)} placeholder="Your name for comments, or leave blank for Anonymous" />
+        )}
+
+        {photoScreen === "uploadPhotos" && (
+          <div className="photoTools">
+            <div className="form">
+              <input
+                id="photoUploadInput"
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => setPhotoFiles(Array.from(e.target.files))}
+              />
+
+              <input
+                value={photoCaption}
+                onChange={(e) => setPhotoCaption(e.target.value)}
+                placeholder="Optional caption for all selected photos"
+              />
+
+              <select
+                value={photoAlbumId}
+                onChange={(e) => setPhotoAlbumId(e.target.value)}
+              >
+                <option value="">Only ALL album</option>
+                {albums.map((album) => (
+                  <option key={album.id} value={album.id}>
+                    Also add to {album.name}
+                  </option>
+                ))}
+              </select>
+
+              <button
+                onClick={async () => {
+                  await uploadPhoto();
+                  setPhotoScreen("main");
+                }}
+                disabled={uploadingPhoto}
+              >
+                {uploadingPhoto
+                  ? "Compressing & Uploading..."
+                  : `Upload ${
+                      photoFiles.length > 1
+                        ? photoFiles.length + " Photos"
+                        : "Photo"
+                    }`}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {photoScreen === "main" && (
+          <>
+            <select
+              className="fullInput"
+              value={selectedAlbum}
+              onChange={(e) => setSelectedAlbum(e.target.value)}
+            >
+              <option value="ALL">ALL</option>
+              {albums.map((album) => (
+                <option key={album.id} value={album.id}>
+                  {album.name}
+                </option>
+              ))}
+            </select>
+
+            <div className="photoGrid">
+              {filteredPhotos.map((photo, index) => (
+                <div className="photoCard" key={photo.id}>
+                  <div className="photoMenuWrap">
+                    <button
+                      className="photoMenuButton"
+                      onClick={() =>
+                        setOpenPhotoMenu(
+                          openPhotoMenu === photo.id ? null : photo.id
+                        )
+                      }
+                    >
+                      ⋯
+                    </button>
+
+                    {openPhotoMenu === photo.id && (
+                      <div className="photoMenu">
+                        <button onClick={() => downloadPhoto(photo)}>
+                          Download
+                        </button>
+                        <button onClick={() => addPhotoToAlbum(photo.id)}>
+                          Add to Album
+                        </button>
+                        <button
+                          className="deleteBtn"
+                          onClick={() => deletePhoto(photo.id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <img
+                    src={photo.image_url}
+                    alt=""
+                    onClick={() => openViewer(index)}
+                  />
+
+                  <p>{photo.caption || "No caption"}</p>
+
+                  <span>
+                    Albums:{" "}
+                    {photo.photo_albums?.length
+                      ? [
+                          "ALL",
+                          ...photo.photo_albums.map((pa) => pa.albums?.name),
+                        ].join(", ")
+                      : "ALL"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </DropdownSection>
+
+      <input
+        className="nameInput"
+        value={guestName}
+        onChange={(e) => setGuestName(e.target.value)}
+        placeholder="Your name for comments, or leave blank for Anonymous"
+      />
 
       <div className="grid">
         {filteredLinks.map((link) => (
@@ -872,21 +918,42 @@ async function saveLink() {
             onTouchStart={(e) => setTouchStartX(e.touches[0].clientX)}
             onTouchEnd={handleTouchEnd}
           >
-            <button className="viewerClose" onClick={closeViewer}>×</button>
+            <button className="viewerClose" onClick={closeViewer}>
+              ×
+            </button>
 
-            <button className="viewerArrow viewerArrowLeft" onClick={previousPhoto}>‹</button>
-            <button className="viewerArrow viewerArrowRight" onClick={nextPhoto}>›</button>
+            <button className="viewerArrow viewerArrowLeft" onClick={previousPhoto}>
+              ‹
+            </button>
+
+            <button className="viewerArrow viewerArrowRight" onClick={nextPhoto}>
+              ›
+            </button>
 
             <div className="viewerMenuWrap">
-              <button className="viewerMenuButton" onClick={() => setOpenPhotoMenu(openPhotoMenu === "viewer" ? null : "viewer")}>
+              <button
+                className="viewerMenuButton"
+                onClick={() =>
+                  setOpenPhotoMenu(openPhotoMenu === "viewer" ? null : "viewer")
+                }
+              >
                 ⋯
               </button>
 
               {openPhotoMenu === "viewer" && (
                 <div className="viewerMenu">
-                  <button onClick={() => downloadPhoto(currentPhoto)}>Download</button>
-                  <button onClick={() => addPhotoToAlbum(currentPhoto.id)}>Add to Album</button>
-                  <button className="deleteBtn" onClick={() => deletePhoto(currentPhoto.id)}>Delete</button>
+                  <button onClick={() => downloadPhoto(currentPhoto)}>
+                    Download
+                  </button>
+                  <button onClick={() => addPhotoToAlbum(currentPhoto.id)}>
+                    Add to Album
+                  </button>
+                  <button
+                    className="deleteBtn"
+                    onClick={() => deletePhoto(currentPhoto.id)}
+                  >
+                    Delete
+                  </button>
                 </div>
               )}
             </div>
@@ -898,7 +965,10 @@ async function saveLink() {
               <span>
                 Albums:{" "}
                 {currentPhoto.photo_albums?.length
-                  ? ["ALL", ...currentPhoto.photo_albums.map((pa) => pa.albums?.name)].join(", ")
+                  ? [
+                      "ALL",
+                      ...currentPhoto.photo_albums.map((pa) => pa.albums?.name),
+                    ].join(", ")
                   : "ALL"}
               </span>
             </div>
@@ -907,8 +977,17 @@ async function saveLink() {
       )}
     </main>
   );
+}
 
-function LinkCard({ link, categories, onReact, onComment, onDelete, onEditName, onChangeCategory }) {
+function LinkCard({
+  link,
+  categories,
+  onReact,
+  onComment,
+  onDelete,
+  onEditName,
+  onChangeCategory,
+}) {
   const [comment, setComment] = useState("");
 
   const reactionCounts = {};
@@ -918,14 +997,18 @@ function LinkCard({ link, categories, onReact, onComment, onDelete, onEditName, 
 
   return (
     <div className="card">
-      {(link.custom_image || link.image) && <img src={link.custom_image || link.image} alt="" />}
+      {(link.custom_image || link.image) && (
+        <img src={link.custom_image || link.image} alt="" />
+      )}
 
       <div className="cardTop">
         <span className="category">{link.categories?.name || "No category"}</span>
 
         <div className="cardActions">
           <button onClick={() => onEditName(link)}>Edit Name</button>
-          <button className="deleteBtn" onClick={() => onDelete(link.id)}>Delete</button>
+          <button className="deleteBtn" onClick={() => onDelete(link.id)}>
+            Delete
+          </button>
         </div>
       </div>
 
@@ -933,12 +1016,20 @@ function LinkCard({ link, categories, onReact, onComment, onDelete, onEditName, 
 
       {link.description && <p>{link.description}</p>}
 
-      <a href={cleanUrl(link.url)} target="_blank" rel="noopener noreferrer">Open link</a>
+      <a href={cleanUrl(link.url)} target="_blank" rel="noopener noreferrer">
+        Open link
+      </a>
 
-      <select className="categorySelect" value={link.category_id || ""} onChange={(e) => onChangeCategory(link.id, e.target.value)}>
+      <select
+        className="categorySelect"
+        value={link.category_id || ""}
+        onChange={(e) => onChangeCategory(link.id, e.target.value)}
+      >
         <option value="">No category</option>
         {categories.map((cat) => (
-          <option key={cat.id} value={cat.id}>{cat.name}</option>
+          <option key={cat.id} value={cat.id}>
+            {cat.name}
+          </option>
         ))}
       </select>
 
@@ -953,7 +1044,9 @@ function LinkCard({ link, categories, onReact, onComment, onDelete, onEditName, 
       <div className="comments">
         <h3>Comments</h3>
 
-        {link.comments?.length === 0 && <p className="emptyText">No comments yet.</p>}
+        {link.comments?.length === 0 && (
+          <p className="emptyText">No comments yet.</p>
+        )}
 
         {link.comments?.map((c) => (
           <p key={c.id}>
@@ -961,7 +1054,11 @@ function LinkCard({ link, categories, onReact, onComment, onDelete, onEditName, 
           </p>
         ))}
 
-        <input value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Write a comment" />
+        <input
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          placeholder="Write a comment"
+        />
 
         <button
           onClick={() => {
