@@ -109,6 +109,7 @@ export default function Home() {
   const unreadNotifications = notifications.filter(
   (n) => n.read === false
 ).length;
+  const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
 
 useEffect(() => {
   function updateDatingTime() {
@@ -137,11 +138,13 @@ useEffect(() => {
 
   useEffect(() => {
     loadEverything();
+    checkUnreadMessages();
 
     let id = localStorage.getItem("visitor_id");
     if (!id) {
       id = Math.random().toString(36).substring(2, 15);
       localStorage.setItem("visitor_id", id);
+      checkUnreadMessages();
     }
 
     const refreshInterval = setInterval(() => {
@@ -149,6 +152,7 @@ useEffect(() => {
       loadAlbums();
       loadLinks();
       loadNotifications();
+      checkUnreadMessages();
     }, 60000);
 
     return () => clearInterval(refreshInterval);
@@ -201,6 +205,39 @@ useEffect(() => {
     await loadPhotos();
     await loadNotifications();
   }
+
+async function checkUnreadMessages() {
+  let visitorId = localStorage.getItem("visitor_id");
+
+  if (!visitorId) return;
+
+  const { data: lastMessage } = await supabase
+    .from("messages")
+    .select("created_at")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const { data: readInfo } = await supabase
+    .from("message_reads")
+    .select("last_read_at")
+    .eq("visitor_id", visitorId)
+    .maybeSingle();
+
+  if (!lastMessage) {
+    setHasUnreadMessages(false);
+    return;
+  }
+
+  if (!readInfo) {
+    setHasUnreadMessages(true);
+    return;
+  }
+
+  setHasUnreadMessages(
+    new Date(lastMessage.created_at) > new Date(readInfo.last_read_at)
+  );
+}
 
   async function loadNotifications() {
     const { data, error } = await supabase
@@ -688,8 +725,8 @@ async function addComment(linkId, text) {
         <div className="heroTop">
           <h1>THE APP</h1>
           <Link href="/messages" className="messagesHomeButton">
-  💬
-</Link>
+  {hasUnreadMessages ? "😛" : "💬"}
+          </Link>
 
           <button
   className="bombButton"
