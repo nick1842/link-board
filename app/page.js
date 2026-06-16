@@ -352,17 +352,36 @@ export default function Home() {
   }
 
   async function addReaction(linkId, emoji) {
-    const visitorId = localStorage.getItem("visitor_id");
+  const visitorId = localStorage.getItem("visitor_id");
 
+  const { data: existingReaction, error: findError } = await supabase
+    .from("reactions")
+    .select("*")
+    .eq("link_id", linkId)
+    .eq("emoji", emoji)
+    .eq("visitor_id", visitorId)
+    .maybeSingle();
+
+  if (findError) {
+    console.error("Reaction lookup error:", findError);
+    return;
+  }
+
+  if (existingReaction) {
+    await supabase
+      .from("reactions")
+      .delete()
+      .eq("id", existingReaction.id);
+  } else {
     await supabase.from("reactions").insert({
       link_id: linkId,
       emoji,
       visitor_id: visitorId,
     });
-
-    await loadLinks();
   }
 
+  await loadLinks();
+}
   async function addComment(linkId, text) {
     if (!text.trim()) return;
 
