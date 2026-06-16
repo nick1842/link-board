@@ -219,37 +219,32 @@ useEffect(() => {
   }
 
 async function checkUnreadMessages() {
-  let visitorId = localStorage.getItem("visitor_id");
-
-  if (!visitorId) return;
-
-  const { data: lastMessage } = await supabase
+  const { data: lastMessage, error } = await supabase
     .from("messages")
     .select("created_at")
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
 
-  const { data: readInfo } = await supabase
-  .from("message_reads")
-  .select("last_read_at")
-  .eq("visitor_id", visitorId)
-  .order("last_read_at", { ascending: false })
-  .limit(1)
-  .maybeSingle();
-  
+  if (error) {
+    console.error("Error checking messages:", error);
+    return;
+  }
+
   if (!lastMessage) {
     setHasUnreadMessages(false);
     return;
   }
 
-  if (!readInfo) {
+  const lastReadAt = localStorage.getItem("messages_last_read_at");
+
+  if (!lastReadAt) {
     setHasUnreadMessages(true);
     return;
   }
 
   setHasUnreadMessages(
-    new Date(lastMessage.created_at) > new Date(readInfo.last_read_at)
+    new Date(lastMessage.created_at) > new Date(lastReadAt)
   );
 }
 
