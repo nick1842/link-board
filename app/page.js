@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
+import Link from "next/link";
 
 function cleanUrl(url) {
   if (!url) return "";
@@ -686,6 +687,9 @@ async function addComment(linkId, text) {
       <header className="hero">
         <div className="heroTop">
           <h1>THE APP</h1>
+          <Link href="/messages" className="messagesHomeButton">
+  💬
+</Link>
 
           <button
   className="bombButton"
