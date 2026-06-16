@@ -705,7 +705,7 @@ async function addComment(linkId, text) {
 </button>
         </div>
 
-        <p>Save links, upload photos, organize albums, and let people comment.</p>
+        <p></p>
 
         <div className="datingCounter">
   <h2>Nimori🤫</h2>
