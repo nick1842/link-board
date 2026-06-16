@@ -1080,13 +1080,26 @@ function LinkCard({
       </select>
 
       <div className="reactions">
-        {["👍", "❤️", "😂", "🔥"].map((emoji) => (
-          <button key={emoji} onClick={() => onReact(link.id, emoji)}>
-            {emoji} {reactionCounts[emoji] || 0}
-          </button>
-        ))}
-      </div>
+  {["👍", "❤️", "😂", "🔥"].map((emoji) => (
+    <button key={emoji} onClick={() => onReact(link.id, emoji)}>
+      {emoji} {reactionCounts[emoji] || 0}
+    </button>
+  ))}
 
+  <button
+    onClick={() => {
+      const customEmoji = prompt("Type or paste an emoji:");
+      if (!customEmoji) return;
+
+      const emoji = customEmoji.trim();
+      if (!emoji) return;
+
+      onReact(link.id, emoji);
+    }}
+  >
+    ➕ Emoji
+  </button>
+</div>
       <div className="comments">
         <h3>Comments</h3>
 
