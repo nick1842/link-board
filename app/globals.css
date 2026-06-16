@@ -586,4 +586,30 @@ transform: translateY(-1px);
   padding: 8px 0;
   border-bottom: 1px solid rgba(255,255,255,.1);
 }
+.photo-dropdown-menu {
+  max-height: 350px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 6px;
+}
+.bombButton {
+  position: relative;
+}
+
+.notificationBadge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: red;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 }

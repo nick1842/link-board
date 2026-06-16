@@ -105,6 +105,7 @@ export default function Home() {
 
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const unreadNotifications = notifications.filter((n) => !n.read).length;
 
 useEffect(() => {
   function updateDatingTime() {
@@ -230,6 +231,19 @@ useEffect(() => {
 
     await loadNotifications();
   }
+  async function markNotificationsRead() {
+  const { error } = await supabase
+    .from("notifications")
+    .update({ read: true })
+    .eq("read", false);
+
+  if (error) {
+    console.error("Error marking notifications read:", error);
+    return;
+  }
+
+  await loadNotifications();
+}
 
   async function uploadToBucket(bucket, file) {
     if (!file) return null;
@@ -653,11 +667,21 @@ async function addComment(linkId, text) {
           <h1>My Link Board</h1>
 
           <button
-            className="bombButton"
-            onClick={() => setShowNotifications(!showNotifications)}
-          >
-            💣 {notifications.length > 0 && `(${notifications.length})`}
-          </button>
+  className="bombButton"
+  onClick={async () => {
+    const nextValue = !showNotifications;
+    setShowNotifications(nextValue);
+
+    if (nextValue) {
+      await markNotificationsRead();
+    }
+  }}
+>
+  💣
+  {unreadNotifications > 0 && (
+    <span className="notificationBadge">{unreadNotifications}</span>
+  )}
+</button>
         </div>
 
         <p>Save links, upload photos, organize albums, and let people comment.</p>
