@@ -95,6 +95,7 @@ export default function Home() {
 
   const [uploadingLinkImage, setUploadingLinkImage] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [showPhotoTools, setShowPhotoTools] = useState(false);
 
   useEffect(() => {
   loadEverything();
@@ -526,80 +527,131 @@ export default function Home() {
         <input className="fullInput" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name, category, URL, or description" />
       </DropdownSection>
 
-      <DropdownSection title="Create Album">
-        <h2>Create Album</h2>
+<DropdownSection title="Photos" defaultOpen={true}>
+  <div className="photosHeader">
+    <h2>Photos</h2>
 
-        <div className="form">
-          <input value={newAlbum} onChange={(e) => setNewAlbum(e.target.value)} placeholder="Example: Vacation, Friends, School" />
-          <button onClick={createAlbum}>Add Album</button>
-        </div>
-      </DropdownSection>
+    <button
+      className="plusButton"
+      onClick={() => setShowPhotoTools(!showPhotoTools)}
+    >
+      +
+    </button>
+  </div>
 
-      <DropdownSection title="Upload Photos">
-        <h2>Upload Photos</h2>
+  {showPhotoTools && (
+    <div className="photoTools">
+      <h3>Create Album</h3>
 
-        <div className="form">
-          <input id="photoUploadInput" type="file" accept="image/*" multiple onChange={(e) => setPhotoFiles(Array.from(e.target.files))} />
+      <div className="form">
+        <input
+          value={newAlbum}
+          onChange={(e) => setNewAlbum(e.target.value)}
+          placeholder="Example: Vacation, Friends, School"
+        />
+        <button onClick={createAlbum}>Add Album</button>
+      </div>
 
-          <input value={photoCaption} onChange={(e) => setPhotoCaption(e.target.value)} placeholder="Optional caption for all selected photos" />
+      <h3>Upload Photos</h3>
 
-          <select value={photoAlbumId} onChange={(e) => setPhotoAlbumId(e.target.value)}>
-            <option value="">Only ALL album</option>
-            {albums.map((album) => (
-              <option key={album.id} value={album.id}>Also add to {album.name}</option>
-            ))}
-          </select>
+      <div className="form">
+        <input
+          id="photoUploadInput"
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={(e) => setPhotoFiles(Array.from(e.target.files))}
+        />
 
-          <button onClick={uploadPhoto} disabled={uploadingPhoto}>
-            {uploadingPhoto
-              ? "Compressing & Uploading..."
-              : `Upload ${photoFiles.length > 1 ? photoFiles.length + " Photos" : "Photo"}`}
-          </button>
-        </div>
-      </DropdownSection>
+        <input
+          value={photoCaption}
+          onChange={(e) => setPhotoCaption(e.target.value)}
+          placeholder="Optional caption for all selected photos"
+        />
 
-      <DropdownSection title="Photo Albums">
-        <h2>Photo Albums</h2>
-
-        <select className="fullInput" value={selectedAlbum} onChange={(e) => setSelectedAlbum(e.target.value)}>
-          <option value="ALL">ALL</option>
+        <select
+          value={photoAlbumId}
+          onChange={(e) => setPhotoAlbumId(e.target.value)}
+        >
+          <option value="">Only ALL album</option>
           {albums.map((album) => (
-            <option key={album.id} value={album.id}>{album.name}</option>
+            <option key={album.id} value={album.id}>
+              Also add to {album.name}
+            </option>
           ))}
         </select>
 
-        <div className="photoGrid">
-          {filteredPhotos.map((photo, index) => (
-            <div className="photoCard" key={photo.id}>
-              <div className="photoMenuWrap">
-                <button className="photoMenuButton" onClick={() => setOpenPhotoMenu(openPhotoMenu === photo.id ? null : photo.id)}>
-                  ⋯
-                </button>
+        <button onClick={uploadPhoto} disabled={uploadingPhoto}>
+          {uploadingPhoto
+            ? "Compressing & Uploading..."
+            : `Upload ${
+                photoFiles.length > 1
+                  ? photoFiles.length + " Photos"
+                  : "Photo"
+              }`}
+        </button>
+      </div>
+    </div>
+  )}
 
-                {openPhotoMenu === photo.id && (
-                  <div className="photoMenu">
-                    <button onClick={() => downloadPhoto(photo)}>Download</button>
-                    <button onClick={() => addPhotoToAlbum(photo.id)}>Add to Album</button>
-                    <button className="deleteBtn" onClick={() => deletePhoto(photo.id)}>Delete</button>
-                  </div>
-                )}
-              </div>
+  <select
+    className="fullInput"
+    value={selectedAlbum}
+    onChange={(e) => setSelectedAlbum(e.target.value)}
+  >
+    <option value="ALL">ALL</option>
+    {albums.map((album) => (
+      <option key={album.id} value={album.id}>
+        {album.name}
+      </option>
+    ))}
+  </select>
 
-              <img src={photo.image_url} alt="" onClick={() => openViewer(index)} />
+  <div className="photoGrid">
+    {filteredPhotos.map((photo, index) => (
+      <div className="photoCard" key={photo.id}>
+        <div className="photoMenuWrap">
+          <button
+            className="photoMenuButton"
+            onClick={() =>
+              setOpenPhotoMenu(openPhotoMenu === photo.id ? null : photo.id)
+            }
+          >
+            ⋯
+          </button>
 
-              <p>{photo.caption || "No caption"}</p>
-
-              <span>
-                Albums:{" "}
-                {photo.photo_albums?.length
-                  ? ["ALL", ...photo.photo_albums.map((pa) => pa.albums?.name)].join(", ")
-                  : "ALL"}
-              </span>
+          {openPhotoMenu === photo.id && (
+            <div className="photoMenu">
+              <button onClick={() => downloadPhoto(photo)}>Download</button>
+              <button onClick={() => addPhotoToAlbum(photo.id)}>
+                Add to Album
+              </button>
+              <button
+                className="deleteBtn"
+                onClick={() => deletePhoto(photo.id)}
+              >
+                Delete
+              </button>
             </div>
-          ))}
+          )}
         </div>
-      </DropdownSection>
 
+        <img src={photo.image_url} alt="" onClick={() => openViewer(index)} />
+
+        <p>{photo.caption || "No caption"}</p>
+
+        <span>
+          Albums:{" "}
+          {photo.photo_albums?.length
+            ? ["ALL", ...photo.photo_albums.map((pa) => pa.albums?.name)].join(
+                ", "
+              )
+            : "ALL"}
+        </span>
+      </div>
+    ))}
+  </div>
+</DropdownSection>
       <input className="nameInput" value={guestName} onChange={(e) => setGuestName(e.target.value)} placeholder="Your name for comments, or leave blank for Anonymous" />
 
       <div className="grid">
