@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 
 function cleanUrl(url) {
@@ -12,9 +12,9 @@ function cleanUrl(url) {
 
 function safeFileName(file) {
   const cleanName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "-");
-  return `${Date.now()}-${crypto.randomUUID()}-${cleanName}`;
+  const randomId = Math.random().toString(36).substring(2, 15);
+  return `${Date.now()}-${randomId}-${cleanName}`;
 }
-
 async function compressImage(file, maxWidth = 1600, quality = 0.75) {
   if (!file || !file.type.startsWith("image/")) return file;
 
@@ -110,7 +110,8 @@ export default function Home() {
 ).length;
 
 
-}useEffect(() => {
+}
+useEffect(() => {
   function updateDatingTime() {
     const startDate = new Date("2024-09-21T00:00:00");
     const now = new Date();
@@ -140,7 +141,7 @@ export default function Home() {
 
     let id = localStorage.getItem("visitor_id");
     if (!id) {
-      id = crypto.randomUUID();
+      id = Math.random().toString(36).substring(2, 15);
       localStorage.setItem("visitor_id", id);
     }
 
