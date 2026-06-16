@@ -837,7 +837,7 @@ async function addComment(linkId, text) {
         )}
       </DropdownSection>
 
-      <DropdownSection title="Photos🤩" defaultOpen={false}>
+      <DropdownSection title="Photos📸" defaultOpen={false}>
         <div className="photosHeader">
           <h2>
             {photoScreen === "main" && "Photos"}
