@@ -1015,7 +1015,7 @@ async function addComment(linkId, text) {
                     onClick={() => openViewer(index)}
                   />
 
-                  <p>{photo.caption || "No caption"}</p>
+                  <p>{photo.caption || " "}</p>
 
                   <span>
                     Albums:{" "}
