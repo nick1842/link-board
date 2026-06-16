@@ -161,18 +161,21 @@ async function loadNotifications() {
 }
 
 async function createNotification(type, message) {
-  const { error } = await supabase.from("notifications").insert({
-    type,
-    message,
-    read: false,
-  });
+  const { error } = await supabase.from("notifications").insert([
+    {
+      type,
+      message,
+      read: false,
+    },
+  ]);
 
   if (error) {
     console.error("Error creating notification:", error);
+    alert("Notification failed. Check Supabase RLS/policies.");
     return;
   }
 
-  loadNotifications();
+  await loadNotifications();
 }
 
   async function uploadToBucket(bucket, file) {
@@ -229,54 +232,64 @@ async function createNotification(type, message) {
     setLinks(data || []);
   }
 
- async function saveLink() {
+async function saveLink() {
   if (!url.trim()) return;
 
   setUploadingLinkImage(true);
 
-  const finalUrl = cleanUrl(url.trim());
+  try {
+    const finalUrl = cleanUrl(url.trim());
 
-  const previewRes = await fetch("/api/preview", {
-    method: "POST",
-    body: JSON.stringify({ url: finalUrl }),
-  });
+    const previewRes = await fetch("/api/preview", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ url: finalUrl }),
+    });
 
-  const preview = await previewRes.json();
-  const uploadedImageUrl = await uploadToBucket("link-images", linkImageFile);
+    const preview = await previewRes.json();
+    const uploadedImageUrl = await uploadToBucket("link-images", linkImageFile);
 
-  const { error } = await supabase.from("links").insert({
-    url: finalUrl,
-    custom_name: customName.trim() || null,
-    category_id: categoryId || null,
-    title: preview.title,
-    description: preview.description,
-    image: preview.image,
-    custom_image: uploadedImageUrl,
-  });
+    const { error } = await supabase.from("links").insert([
+      {
+        url: finalUrl,
+        custom_name: customName.trim() || null,
+        category_id: categoryId || null,
+        title: preview.title,
+        description: preview.description,
+        image: preview.image,
+        custom_image: uploadedImageUrl,
+      },
+    ]);
 
-  setUploadingLinkImage(false);
+    if (error) {
+      console.error("Link save error:", error);
+      alert("There was an error saving the link.");
+      return;
+    }
 
-  if (error) {
-    console.error("Link save error:", error);
-    alert("There was an error saving the link.");
-    return;
+    await createNotification(
+      "link",
+      `${guestName || "Someone"} added a new link`
+    );
+
+    setUrl("");
+    setCustomName("");
+    setCategoryId("");
+    setLinkImageFile(null);
+
+    const fileInput = document.getElementById("linkImageInput");
+    if (fileInput) fileInput.value = "";
+
+    await loadLinks();
+    await loadNotifications();
+  } catch (err) {
+    console.error("Save link failed:", err);
+    alert("Save link failed. Check the console.");
+  } finally {
+    setUploadingLinkImage(false);
   }
-
-  await createNotification(
-    "link",
-    `${guestName || "Someone"} added a new link`
-  );
-
-  setUrl("");
-  setCustomName("");
-  setCategoryId("");
-  setLinkImageFile(null);
-
-  const fileInput = document.getElementById("linkImageInput");
-  if (fileInput) fileInput.value = "";
-
-  await loadLinks();
-  await loadNotifications();
 }
 
   async function deleteLink(linkId) {
