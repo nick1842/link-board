@@ -483,14 +483,38 @@ button:hover {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  min-width: 170px;
+  width: 190px;
+  max-width: calc(100vw - 32px);
   padding: 10px;
   border-radius: 14px;
   background: white;
+  color: black;
   box-shadow: 0 12px 30px rgba(0,0,0,.18);
-  z-index: 100;
+  z-index: 1000;
 }
 
+.plusMenu button {
+  width: 100%;
+  padding: 12px;
+  text-align: left;
+  color: black;
+  background: #f3f3f3;
+}
+@media (max-width: 600px) {
+  .plusMenu {
+    position: fixed;
+    left: 16px;
+    right: 16px;
+    top: 120px;
+    width: auto;
+    max-width: none;
+  }
+
+  .plusMenu button {
+    text-align: center;
+    font-size: 16px;
+  }
+}
 .backButton {
   border: none;
   border-radius: 999px;
