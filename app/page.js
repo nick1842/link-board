@@ -84,6 +84,7 @@ export default function Home() {
   const [search, setSearch] = useState("");
   const [linkImageFile, setLinkImageFile] = useState(null);
   const [linkScreen, setLinkScreen] = useState("main");
+  const [datingTime, setDatingTime] = useState("");
 
   const [albums, setAlbums] = useState([]);
   const [photos, setPhotos] = useState([]);
@@ -104,6 +105,31 @@ export default function Home() {
 
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
+
+useEffect(() => {
+  function updateDatingTime() {
+    const startDate = new Date("2024-09-21T00:00:00");
+    const now = new Date();
+
+    let diff = Math.floor((now - startDate) / 1000);
+
+    const days = Math.floor(diff / 86400);
+    diff %= 86400;
+
+    const hours = Math.floor(diff / 3600);
+    diff %= 3600;
+
+    const minutes = Math.floor(diff / 60);
+    const seconds = diff % 60;
+
+    setDatingTime(`${days} days, ${hours} hours, ${minutes} minutes, ${seconds} seconds`);
+  }
+
+  updateDatingTime();
+  const timer = setInterval(updateDatingTime, 1000);
+
+  return () => clearInterval(timer);
+}, []);
 
   useEffect(() => {
     loadEverything();
@@ -620,6 +646,11 @@ async function addComment(linkId, text) {
         </div>
 
         <p>Save links, upload photos, organize albums, and let people comment.</p>
+
+        <div className="datingCounter">
+  <h2>Me and my girlfriend have been dating for</h2>
+  <p>{datingTime}</p>
+</div>
 
         {showNotifications && (
           <div className="notificationPanel">
