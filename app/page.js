@@ -108,6 +108,40 @@ export default function Home() {
   const unreadNotifications = notifications.filter(
   (n) => n.read === false
 ).length;
+
+const [enteredPassword, setEnteredPassword] = useState("");
+const [unlocked, setUnlocked] = useState(false);
+
+const SITE_PASSWORD = "sigma";
+
+if (!unlocked) {
+  return (
+    <main className="password-page">
+      <div className="password-box">
+        <h1>Enter Password</h1>
+
+        <input
+          type="password"
+          placeholder="Password"
+          value={enteredPassword}
+          onChange={(e) => setEnteredPassword(e.target.value)}
+        />
+
+        <button
+          onClick={() => {
+            if (enteredPassword === SITE_PASSWORD) {
+              setUnlocked(true);
+            } else {
+              alert("Wrong password");
+            }
+          }}
+        >
+          Unlock
+        </button>
+      </div>
+    </main>
+  );
+}
 useEffect(() => {
   function updateDatingTime() {
     const startDate = new Date("2024-09-21T00:00:00");
