@@ -97,14 +97,25 @@ export default function Home() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   useEffect(() => {
-    loadEverything();
+  loadEverything();
 
-    let id = localStorage.getItem("visitor_id");
-    if (!id) {
-      id = crypto.randomUUID();
-      localStorage.setItem("visitor_id", id);
-    }
-  }, []);
+  let id = localStorage.getItem("visitor_id");
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem("visitor_id", id);
+  }
+
+  // Auto refresh every minute
+  const refreshInterval = setInterval(() => {
+    loadPhotos();
+    loadAlbums();
+    loadLinks();
+  }, 60000);
+
+  return () => {
+    clearInterval(refreshInterval);
+  };
+}, []);
 
   useEffect(() => {
     function handleKeyDown(e) {
