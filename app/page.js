@@ -236,53 +236,55 @@ async function createNotification(type, message) {
     setLinks(data || []);
   }
 
-  async function saveLink() {
-    if (!url.trim()) return;
+ async function saveLink() {
+  if (!url.trim()) return;
 
-    setUploadingLinkImage(true);
+  setUploadingLinkImage(true);
 
-    const finalUrl = cleanUrl(url.trim());
+  const finalUrl = cleanUrl(url.trim());
 
-    const previewRes = await fetch("/api/preview", {
-      method: "POST",
-      body: JSON.stringify({ url: finalUrl }),
-    });
+  const previewRes = await fetch("/api/preview", {
+    method: "POST",
+    body: JSON.stringify({ url: finalUrl }),
+  });
 
-    const preview = await previewRes.json();
-    const uploadedImageUrl = await uploadToBucket("link-images", linkImageFile);
+  const preview = await previewRes.json();
+  const uploadedImageUrl = await uploadToBucket("link-images", linkImageFile);
 
-    const { error } = await supabase.from("links").insert({
-      url: finalUrl,
-      custom_name: customName.trim() || null,
-      category_id: categoryId || null,
-      title: preview.title,
-      description: preview.description,
-      image: preview.image,
-      custom_image: uploadedImageUrl,
-    });
+  const { error } = await supabase.from("links").insert({
+    url: finalUrl,
+    custom_name: customName.trim() || null,
+    category_id: categoryId || null,
+    title: preview.title,
+    description: preview.description,
+    image: preview.image,
+    custom_image: uploadedImageUrl,
+  });
 
-    setUploadingLinkImage(false);
+  setUploadingLinkImage(false);
 
-    if (error) {
-      alert("There was an error saving the link.");
-      return;
-    }
-
-    setUrl("");
-    setCustomName("");
-    setCategoryId("");
-    setLinkImageFile(null);
-
-    const fileInput = document.getElementById("linkImageInput");
-    if (fileInput) fileInput.value = "";
-
-    await loadLinks();
-
-await createNotification(
-  "link",
-  `${guestName || "Someone"} added a new link`
-);
+  if (error) {
+    console.error("Link save error:", error);
+    alert("There was an error saving the link.");
+    return;
   }
+
+  await createNotification(
+    "link",
+    `${guestName || "Someone"} added a new link`
+  );
+
+  setUrl("");
+  setCustomName("");
+  setCategoryId("");
+  setLinkImageFile(null);
+
+  const fileInput = document.getElementById("linkImageInput");
+  if (fileInput) fileInput.value = "";
+
+  await loadLinks();
+  await loadNotifications();
+}
 
   async function deleteLink(linkId) {
     if (!confirm("Delete this link?")) return;
