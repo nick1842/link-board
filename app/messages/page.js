@@ -172,10 +172,22 @@ async function markMessagesRead(id) {
                 className={`messageRow ${isMine ? "mine" : "theirs"}`}
               >
                 <div className="messageBubble">
-                  {!isMine && <strong>{msg.guest_name || "Anonymous"}</strong>}
-                  <p>{msg.message}</p>
-                  <span>{formatTime(msg.created_at)}</span>
-                </div>
+  {!isMine && <strong>{msg.guest_name || "Anonymous"}</strong>}
+  <p>{msg.message}</p>
+  <span>{formatTime(msg.created_at)}</span>
+
+  {isMine && (
+    <small className="readReceipt">
+      {readReceipts.some(
+        (r) =>
+          r.visitor_id !== visitorId &&
+          new Date(r.last_read_at) > new Date(msg.created_at)
+      )
+        ? "Read"
+        : "Delivered"}
+    </small>
+  )}
+</div>
               </div>
             );
           })
