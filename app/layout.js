@@ -16,7 +16,6 @@ export const metadata = {
   title: "Our Website",
   description: "Photos, memories, links, and notifications",
   manifest: "/manifest.json",
-  themeColor: "#184d26",
   appleWebApp: {
     capable: true,
     title: "Our Website",
@@ -30,7 +29,9 @@ export const metadata = {
     apple: "/icon-512.png",
   },
 };
-
+export const viewport = {
+  themeColor: "#184d26",
+};
 
 export default function RootLayout({ children }) {
   return (
