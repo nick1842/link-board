@@ -631,6 +631,14 @@ async function addComment(linkId, text) {
     setTouchStartX(null);
   }
 
+  <button
+  onClick={() =>
+    createNotification("test", "This is a test notification")
+  }
+>
+  Test Notification
+</button>
+
   return (
     <main className="page">
       <header className="hero">
