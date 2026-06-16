@@ -13,34 +13,44 @@ export default function MessagesPage() {
   const [readReceipts, setReadReceipts] = useState([]);
 
   useEffect(() => {
-    let id = localStorage.getItem("visitor_id");
+  let id = localStorage.getItem("visitor_id");
 
-    if (!id) {
-      id = Math.random().toString(36).substring(2, 15);
-      localStorage.setItem("visitor_id", id);
-    }
+  if (!id) {
+    id = Math.random().toString(36).substring(2, 15);
+    localStorage.setItem("visitor_id", id);
+  }
 
-    setVisitorId(id);
-    loadMessages();
-    markMessagesRead(id);
-    loadReadReceipts();
+  setVisitorId(id);
+  loadMessages();
+  markMessagesRead(id);
+  loadReadReceipts();
 
-    const channel = supabase
-      .channel("messages-live")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "messages" },
-        () => {
-          loadMessages();
-          loadReadReceipts();
-        }
-      )
-      .subscribe();
+  const channel = supabase
+    .channel("messages-live")
+    .on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "messages",
+      },
+      (payload) => {
+        setMessages((currentMessages) => [
+          ...currentMessages,
+          payload.new,
+        ]);
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
+        setTimeout(() => {
+          bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+        }, 100);
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}, []);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
