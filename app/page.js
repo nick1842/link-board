@@ -148,6 +148,27 @@ useEffect(() => {
   };
 }, []);
 
+useEffect(() => {
+  const channel = supabase
+    .channel("message-notifications")
+    .on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "messages",
+      },
+      () => {
+        setHasUnreadMessages(true);
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}, []);
+
   useEffect(() => {
     loadEverything();
     checkUnreadMessages();
