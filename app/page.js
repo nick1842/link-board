@@ -492,7 +492,7 @@ export default function Home() {
         <p>Save links, upload photos, organize albums, and let people comment.</p>
       </header>
 
-      <DropdownSection title="Add a Link" defaultOpen={false}>
+      <DropdownSection title="Add a Link🤯" defaultOpen={false}>
   <div className="linkHeader">
     {linkScreen === "main" ? (
       <button className="smallIconButton" onClick={() => setLinkScreen("createCategory")}>
@@ -584,7 +584,7 @@ export default function Home() {
   )}
 </DropdownSection>
 
-<DropdownSection title="Photos" defaultOpen={false}>
+<DropdownSection title="Photos🤩" defaultOpen={false}>
   <div className="photosHeader">
     <h2>
       {photoScreen === "main" && "Photos"}
