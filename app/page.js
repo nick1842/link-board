@@ -110,13 +110,7 @@ export default function Home() {
   (n) => n.read === false
 ).length;
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
-
   useEffect(() => {
-  loadEverything();
-  checkUnreadMessages();
-}, []);
-
-useEffect(() => {
   function updateDatingTime() {
     const startDate = new Date("2024-09-21T00:00:00");
     const now = new Date();
