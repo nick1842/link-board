@@ -892,4 +892,8 @@ transform: translateY(-1px);
   opacity: 0.7;
   text-align: right;
 }
+.messageComposer input,
+.chatNameBox input {
+  font-size: 16px;
+}
 }
