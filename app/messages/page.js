@@ -101,36 +101,37 @@ console.log("Loaded ALL photos:", data);
   if (!messageText.trim() && !selectedPhotoUrl) return;
 
   const textToSend = messageText.trim();
+  const photoToSend = selectedPhotoUrl;
+
   setMessageText("");
-setSelectedPhotoUrl("");
+  setSelectedPhotoUrl("");
 
   const { data, error } = await supabase
-  .from("messages")
-  .insert({
-    guest_name: guestName.trim() || "Anonymous",
-    message: textToSend,
-    visitor_id: visitorId,
-    photo_url: selectedPhotoUrl || null,
-  })
-  .select()
-  .single();
+    .from("messages")
+    .insert({
+      guest_name: guestName.trim() || "Anonymous",
+      message: textToSend,
+      visitor_id: visitorId,
+      photo_url: photoToSend || null,
+    })
+    .select()
+    .single();
 
   if (error) {
     console.error("Error sending message:", error);
     alert("Message failed to send.");
     setMessageText(textToSend);
-    setSelectedPhotoUrl("");
+    setSelectedPhotoUrl(photoToSend);
     return;
   }
 
   setMessages((currentMessages) => {
     const alreadyExists = currentMessages.some((msg) => msg.id === data.id);
-
     if (alreadyExists) return currentMessages;
-
     return [...currentMessages, data];
   });
 }
+
   function formatTime(dateString) {
     return new Date(dateString).toLocaleTimeString([], {
       hour: "numeric",
