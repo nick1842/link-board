@@ -202,14 +202,14 @@ setSelectedPhotoUrl("");
   <div className="photoPicker">
     {allPhotos.map((photo) => (
       <img
-        key={photo.id}
-        src={photo.photo_url}
+  key={photo.id}
+  src={photo.photo_url || photo.image_url || photo.url}
         alt=""
         className={`pickerPhoto ${
-          selectedPhotoUrl === photo.photo_url ? "selectedPhoto" : ""
+         selectedPhotoUrl === (photo.photo_url || photo.image_url || photo.url) ? "selectedPhoto" : ""
         }`}
         onClick={() => {
-          setSelectedPhotoUrl(photo.photo_url);
+          setSelectedPhotoUrl(photo.photo_url || photo.image_url || photo.url);
           setShowPhotoPicker(false);
         }}
       />
