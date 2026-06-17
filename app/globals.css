@@ -734,6 +734,11 @@ transform: translateY(-1px);
   gap: 14px;
   padding: 12px 0;
   border-bottom: 1px solid #2a2f3d;
+
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: #080a0f;
 }
 
 .messagesHeader h1 {
@@ -763,6 +768,10 @@ transform: translateY(-1px);
 
 .chatNameBox {
   padding: 12px 0;
+  position: sticky;
+  top: 67px; /* directly under header */
+  z-index: 999;
+  background: #080a0f;
 }
 
 .chatNameBox input {
