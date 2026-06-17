@@ -149,8 +149,16 @@ useEffect(() => {
 }, []);
 
 useEffect(() => {
+  const unread = localStorage.getItem("has_unread_messages");
+
+  if (unread === "true") {
+    setHasUnreadMessages(true);
+  }
+}, []);
+
+useEffect(() => {
   const channel = supabase
-    .channel("message-notifications")
+    .channel("home-message-notifications")
     .on(
       "postgres_changes",
       {
@@ -159,36 +167,21 @@ useEffect(() => {
         table: "messages",
       },
       () => {
+        console.log("NEW MESSAGE DETECTED");
+
+        localStorage.setItem("has_unread_messages", "true");
         setHasUnreadMessages(true);
       }
     )
-    .subscribe();
+    .subscribe((status) => {
+      console.log("MESSAGE CHANNEL:", status);
+    });
 
   return () => {
     supabase.removeChannel(channel);
   };
 }, []);
-
-  useEffect(() => {
-  const channel = supabase
-    .channel("message-notifications")
-    .on(
-      "postgres_changes",
-      {
-        event: "INSERT",
-        schema: "public",
-        table: "messages",
-      },
-      () => {
-        setHasUnreadMessages(true);
-      }
-    )
-    .subscribe();
-
-  return () => {
-    supabase.removeChannel(channel);
-  };
-}, []);
+  
   useEffect(() => {
     function handleKeyDown(e) {
       if (viewerIndex === null) return;
@@ -752,10 +745,13 @@ async function addComment(linkId, text) {
       <header className="hero">
         <div className="heroTop">
           <h1>THE APP</h1>
-          <Link
+         <Link
   href="/messages"
   className="messagesHomeButton"
-  onClick={() => setHasUnreadMessages(false)}
+  onClick={() => {
+    localStorage.setItem("has_unread_messages", "false");
+    setHasUnreadMessages(false);
+  }}
 >
   {hasUnreadMessages ? "😛" : "💬"}
 </Link>
