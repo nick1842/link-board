@@ -11,6 +11,17 @@ function cleanUrl(url) {
     : `https://${url}`;
 }
 
+function getVisitorId() {
+  let id = localStorage.getItem("visitor_id");
+
+  if (!id) {
+    id = Math.random().toString(36).substring(2, 15);
+    localStorage.setItem("visitor_id", id);
+  }
+
+  return id;
+}
+
 function safeFileName(file) {
   const cleanName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "-");
   const randomId = Math.random().toString(36).substring(2, 15);
@@ -269,6 +280,7 @@ async function checkUnreadMessages() {
     const { data, error } = await supabase
       .from("notifications")
       .select("*")
+.neq("visitor_id", getVisitorId())
       .order("created_at", { ascending: false });
 
       console.log("Notifications loaded:", data);
@@ -282,13 +294,16 @@ async function checkUnreadMessages() {
   }
 
   async function createNotification(type, message) {
-    const { error } = await supabase.from("notifications").insert([
-      {
-        type,
-        message,
-        read: false,
-      },
-    ]);
+  const visitorId = getVisitorId();
+
+  const { error } = await supabase.from("notifications").insert([
+    {
+      type,
+      message,
+      read: false,
+      visitor_id: visitorId,
+    },
+  ]);
 
     if (error) {
       console.error("Error creating notification:", error);
