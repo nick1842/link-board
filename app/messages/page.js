@@ -93,7 +93,7 @@ async function loadAllPhotos() {
     console.error("Error loading photos:", error);
     return;
   }
-
+console.log("Loaded ALL photos:", data);
   setAllPhotos(data || []);
 }
 
