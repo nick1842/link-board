@@ -121,11 +121,39 @@ export default function Home() {
   (n) => n.read === false
 ).length;
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
+  const [hasNewNotification, setHasNewNotification] = useState(false);
 
   useEffect(() => {
     loadEverything();
     checkUnreadMessages();
   }, []);
+
+useEffect(() => {
+  const channel = supabase
+    .channel("notifications-live")
+    .on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "notifications",
+      },
+      (payload) => {
+  setNotifications((current) => [
+    payload.new,
+    ...current,
+  ]);
+
+  setHasNewNotification(true);
+}
+
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}, []);
 
 useEffect(() => {
   const channel = supabase
@@ -806,7 +834,7 @@ async function addComment(linkId, text) {
     }
   }}
 >
-  💣
+  💣 {hasNewNotification && "🔴"}
   {unreadNotifications > 0 && (
     <span className="notificationBadge">{unreadNotifications}</span>
   )}
