@@ -170,27 +170,25 @@ useEffect(() => {
 }, []);
 
   useEffect(() => {
-    loadEverything();
-    checkUnreadMessages();
+  const channel = supabase
+    .channel("message-notifications")
+    .on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "messages",
+      },
+      () => {
+        setHasUnreadMessages(true);
+      }
+    )
+    .subscribe();
 
-    let id = localStorage.getItem("visitor_id");
-    if (!id) {
-      id = Math.random().toString(36).substring(2, 15);
-      localStorage.setItem("visitor_id", id);
-      checkUnreadMessages();
-    }
-
-    const refreshInterval = setInterval(() => {
-      loadPhotos();
-      loadAlbums();
-      loadLinks();
-      loadNotifications();
-      checkUnreadMessages();
-    }, 60000);
-
-    return () => clearInterval(refreshInterval);
-  }, []);
-
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}, []);
   useEffect(() => {
     function handleKeyDown(e) {
       if (viewerIndex === null) return;
