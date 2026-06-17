@@ -10,6 +10,10 @@ export default function MessagesPage() {
   const [visitorId, setVisitorId] = useState("");
   const bottomRef = useRef(null);
 
+  const [allPhotos, setAllPhotos] = useState([]);
+const [showPhotoPicker, setShowPhotoPicker] = useState(false);
+const [selectedPhotoUrl, setSelectedPhotoUrl] = useState("");
+
   useEffect(() => {
     let id = localStorage.getItem("visitor_id");
 
@@ -20,6 +24,7 @@ export default function MessagesPage() {
 
     setVisitorId(id);
     loadMessages();
+    loadAllPhotos();
     localStorage.setItem("messages_last_read_at", new Date().toISOString());
 
     const channel = supabase
@@ -78,26 +83,43 @@ export default function MessagesPage() {
     setMessages(data || []);
   }
 
+async function loadAllPhotos() {
+  const { data, error } = await supabase
+    .from("photos")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error loading photos:", error);
+    return;
+  }
+
+  setAllPhotos(data || []);
+}
+
   async function sendMessage() {
-  if (!messageText.trim()) return;
+  if (!messageText.trim() && !selectedPhotoUrl) return;
 
   const textToSend = messageText.trim();
   setMessageText("");
+setSelectedPhotoUrl("");
 
   const { data, error } = await supabase
-    .from("messages")
-    .insert({
-      guest_name: guestName.trim() || "Anonymous",
-      message: textToSend,
-      visitor_id: visitorId,
-    })
-    .select()
-    .single();
+  .from("messages")
+  .insert({
+    guest_name: guestName.trim() || "Anonymous",
+    message: textToSend,
+    visitor_id: visitorId,
+    photo_url: selectedPhotoUrl || null,
+  })
+  .select()
+  .single();
 
   if (error) {
     console.error("Error sending message:", error);
     alert("Message failed to send.");
     setMessageText(textToSend);
+    setSelectedPhotoUrl("");
     return;
   }
 
@@ -156,8 +178,17 @@ export default function MessagesPage() {
               >
                 <div className="messageBubble">
                   {!isMine && <strong>{msg.guest_name || "Anonymous"}</strong>}
-                  <p>{msg.message}</p>
-                  <span>{formatTime(msg.created_at)}</span>
+                  {msg.message && <p>{msg.message}</p>}
+
+{msg.photo_url && (
+  <img
+    src={msg.photo_url}
+    alt=""
+    className="messagePhoto"
+  />
+)}
+
+<span>{formatTime(msg.created_at)}</span>
                 </div>
               </div>
             );
@@ -167,7 +198,31 @@ export default function MessagesPage() {
         <div ref={bottomRef} />
       </section>
 
+{showPhotoPicker && (
+  <div className="photoPicker">
+    {allPhotos.map((photo) => (
+      <img
+        key={photo.id}
+        src={photo.photo_url}
+        alt=""
+        className={`pickerPhoto ${
+          selectedPhotoUrl === photo.photo_url ? "selectedPhoto" : ""
+        }`}
+        onClick={() => {
+          setSelectedPhotoUrl(photo.photo_url);
+          setShowPhotoPicker(false);
+        }}
+      />
+    ))}
+  </div>
+)}
+
       <div className="messageComposer">
+      <button
+  onClick={() => setShowPhotoPicker(!showPhotoPicker)}
+>
+  📷
+</button>
         <input
           value={messageText}
           onChange={(e) => setMessageText(e.target.value)}
