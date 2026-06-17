@@ -753,10 +753,6 @@ async function addComment(linkId, text) {
          <Link
   href="/messages"
   className="messagesHomeButton"
-  onClick={() => {
-    localStorage.setItem("has_unread_messages", "false");
-    setHasUnreadMessages(false);
-  }}
 >
   {hasUnreadMessages ? "😛" : "💬"}
 </Link>

@@ -20,6 +20,7 @@ export default function MessagesPage() {
 
     setVisitorId(id);
     loadMessages();
+    localStorage.setItem("messages_last_read_at", new Date().toISOString());
 
     const channel = supabase
       .channel("messages-live")
