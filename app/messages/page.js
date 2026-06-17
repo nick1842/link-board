@@ -46,7 +46,7 @@ export default function MessagesPage() {
 
   setTimeout(() => {
     bottomRef.current?.scrollIntoView({
-      behavior: "smooth",
+      behavior: "auto",
     });
   }, 100);
 }
@@ -61,7 +61,7 @@ export default function MessagesPage() {
   }, []);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    bottomRef.current?.scrollIntoView({ behavior: "auto" });
   }, [messages]);
 
   async function loadMessages() {
