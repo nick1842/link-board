@@ -127,6 +127,29 @@ export default function Home() {
     checkUnreadMessages();
   }, []);
 
+useEffect(() => {
+  const channel = supabase
+    .channel("notifications-live")
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "notifications",
+      },
+      () => {
+        loadNotifications();
+      }
+    )
+    .subscribe((status) => {
+      console.log("Notifications realtime:", status);
+    });
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}, []);
+
   useEffect(() => {
   function updateDatingTime() {
     const startDate = new Date("2024-09-21T00:00:00");
