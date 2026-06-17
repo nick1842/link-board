@@ -134,39 +134,13 @@ useEffect(() => {
     .on(
       "postgres_changes",
       {
-        event: "INSERT",
-        schema: "public",
-        table: "notifications",
-      },
-      (payload) => {
-  setNotifications((current) => [
-    payload.new,
-    ...current,
-  ]);
-
-  setHasNewNotification(true);
-}
-
-    )
-    .subscribe();
-
-  return () => {
-    supabase.removeChannel(channel);
-  };
-}, []);
-
-useEffect(() => {
-  const channel = supabase
-    .channel("notifications-live")
-    .on(
-      "postgres_changes",
-      {
         event: "*",
         schema: "public",
         table: "notifications",
       },
       () => {
         loadNotifications();
+        setHasNewNotification(true);
       }
     )
     .subscribe((status) => {
@@ -826,13 +800,14 @@ async function addComment(linkId, text) {
           <button
   className="bombButton"
   onClick={async () => {
-    const nextValue = !showNotifications;
-    setShowNotifications(nextValue);
+  const nextValue = !showNotifications;
+  setShowNotifications(nextValue);
 
-    if (nextValue) {
-      await markNotificationsRead();
-    }
-  }}
+  if (nextValue) {
+    await markNotificationsRead();
+    setHasNewNotification(false);
+  }
+}}
 >
   💣 {hasNewNotification && "🔴"}
   {unreadNotifications > 0 && (
