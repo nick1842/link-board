@@ -41,3 +41,7 @@ li {
   margin-top: 10px;
   border-radius: 8px;
 }
+.completed {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
