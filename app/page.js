@@ -6,7 +6,6 @@ import { supabase } from "@/lib/supabase";
 export default function Home() {
   const [task, setTask] = useState("");
   const [tasks, setTasks] = useState([]);
-  const [dueDate, setDueDate] = useState("");
   const [dueDateTime, setDueDateTime] = useState("");
   const [showNotifButton, setShowNotifButton] = useState(true);
 
@@ -22,6 +21,16 @@ export default function Home() {
 
   checkDueTasks(loadedTasks);
 };
+
+useEffect(() => {
+  const interval = setInterval(() => {
+    if (tasks.length > 0) {
+      checkDueTasks(tasks);
+    }
+  }, 30000); // every 30 seconds
+
+  return () => clearInterval(interval);
+}, [tasks]);
 
 useEffect(() => {
   if (tasks.length > 0) {
@@ -63,23 +72,27 @@ useEffect(() => {
 const checkDueTasks = async (tasks) => {
   const now = new Date();
 
-  for (const task of tasks) {
-    if (!task.due_datetime || task.completed || task.notified) continue;
+  for (const t of tasks) {
+    if (!t.due_datetime || t.completed || t.notified) continue;
 
-    const dueTime = new Date(task.due_datetime);
+    const dueTime = new Date(t.due_datetime);
 
     if (dueTime <= now) {
       if (Notification.permission === "granted") {
         new Notification("Lock in 🔒", {
-          body: task.text,
+          body: t.text,
         });
       }
 
-      // mark as notified in Supabase
-      await supabase
+      // mark as notified
+      const { error } = await supabase
         .from("tasks")
         .update({ notified: true })
-        .eq("id", task.id);
+        .eq("id", t.id);
+
+      if (error) {
+        console.log("Notify update error:", error);
+      }
     }
   }
 };
