@@ -60,29 +60,30 @@ useEffect(() => {
   setDueDateTime("");
 };
 
-const checkDueTasks = (tasks) => {
+const checkDueTasks = async (tasks) => {
   const now = new Date();
 
-  tasks.forEach((task) => {
-    if (!task.due_datetime || task.completed) return;
+  for (const task of tasks) {
+    if (!task.due_datetime || task.completed || task.notified) continue;
 
     const dueTime = new Date(task.due_datetime);
 
-    // if task is due right now or overdue
     if (dueTime <= now) {
       if (Notification.permission === "granted") {
-        new Notification("Lock in🔒", {
+        new Notification("Lock in 🔒", {
           body: task.text,
         });
       }
+
+      // mark as notified in Supabase
+      await supabase
+        .from("tasks")
+        .update({ notified: true })
+        .eq("id", task.id);
     }
-  });
+  }
 };
-{showNotifButton && (
-  <button onClick={enableNotifications}>
-    🔔 Enable Notifications
-  </button>
-)}
+
 const enableNotifications = async () => {
   if (!("Notification" in window)) {
     alert("Not supported");
