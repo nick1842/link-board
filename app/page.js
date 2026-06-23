@@ -1,186 +1,151 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import { supabase } from "@/lib/supabase";
 
 export default function Home() {
   const [task, setTask] = useState("");
   const [tasks, setTasks] = useState([]);
-  const [dueDateTime, setDueDateTime] = useState("");
-  const [showNotifButton, setShowNotifButton] = useState(true);
+  const [loading, setLoading] = useState(false);
 
+  // -----------------------------
   // LOAD TASKS
+  // -----------------------------
   const fetchTasks = async () => {
-  const { data } = await supabase
-    .from("tasks")
-    .select("*")
-    .order("id");
+    const { data, error } = await supabase
+      .from("tasks")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-  const loadedTasks = data || [];
-  setTasks(loadedTasks);
-
-  checkDueTasks(loadedTasks);
-};
-
-useEffect(() => {
-  const interval = setInterval(() => {
-    if (tasks.length > 0) {
-      checkDueTasks(tasks);
+    if (error) {
+      toast.error("Failed to load tasks");
+      return;
     }
-  }, 30000); // every 30 seconds
 
-  return () => clearInterval(interval);
-}, [tasks]);
-
-useEffect(() => {
-  if (tasks.length > 0) {
-    checkDueTasks(tasks);
-  }
-}, [tasks]);
-
-  
+    setTasks(data);
+  };
 
   useEffect(() => {
     fetchTasks();
   }, []);
 
+  // -----------------------------
   // ADD TASK
- const addTask = async () => {
-  if (!task.trim()) return;
+  // -----------------------------
+  const addTask = async (e) => {
+    e.preventDefault();
 
-  const { data, error } = await supabase
-    .from("tasks")
-    .insert([
-      {
-        text: task,
-        completed: false,
-        due_datetime: dueDateTime || null,
-      },
-    ])
-    .select();
-
-  if (error) {
-    console.log(error);
-    return;
-  }
-
-  setTasks([...tasks, data[0]]);
-  setTask("");
-  setDueDateTime("");
-};
-
-const checkDueTasks = async (tasks) => {
-  const now = new Date();
-
-  for (const t of tasks) {
-    if (!t.due_datetime || t.completed || t.notified) continue;
-
-    const dueTime = new Date(t.due_datetime);
-
-    if (dueTime <= now) {
-      if (Notification.permission === "granted") {
-        new Notification("Lock in 🔒", {
-          body: t.text,
-        });
-      }
-
-      // mark as notified
-      const { error } = await supabase
-        .from("tasks")
-        .update({ notified: true })
-        .eq("id", t.id);
-
-      if (error) {
-        console.log("Notify update error:", error);
-      }
+    if (!task.trim()) {
+      toast.error("Task cannot be empty");
+      return;
     }
-  }
-};
 
-const enableNotifications = async () => {
-  if (!("Notification" in window)) {
-    alert("Not supported");
-    setShowNotifButton(false);
-    return;
-  }
+    setLoading(true);
 
-  const permission = await Notification.requestPermission();
+    const { error } = await supabase.from("tasks").insert([
+      {
+        title: task,
+      },
+    ]);
 
-  setShowNotifButton(false);
+    setLoading(false);
 
-  if (permission === "granted") {
-    alert("Notifications enabled!");
-  } else {
-    alert("Notifications blocked");
-  }
-};
-  // TOGGLE COMPLETE
-  const toggleTask = async (id, current) => {
-    await supabase
+    if (error) {
+      toast.error("Failed to add task");
+      return;
+    }
+
+    setTask("");
+    toast.success("Task added!");
+  };
+
+  // -----------------------------
+  // DELETE TASK
+  // -----------------------------
+  const deleteTask = async (id) => {
+    const { error } = await supabase
       .from("tasks")
-      .update({ completed: !current })
+      .delete()
       .eq("id", id);
 
-    setTasks(
-      tasks.map((t) =>
-        t.id === id ? { ...t, completed: !current } : t
+    if (error) {
+      toast.error("Failed to delete task");
+      return;
+    }
+
+    toast("Task deleted", { icon: "🗑️" });
+  };
+
+  // -----------------------------
+  // REAL-TIME NOTIFICATIONS
+  // -----------------------------
+  useEffect(() => {
+    const channel = supabase
+      .channel("tasks-realtime")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "tasks" },
+        (payload) => {
+          setTasks((prev) => [payload.new, ...prev]);
+          toast.success(`New task: ${payload.new.title}`);
+        }
       )
-    );
-  };
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "tasks" },
+        (payload) => {
+          setTasks((prev) =>
+            prev.filter((t) => t.id !== payload.old.id)
+          );
+        }
+      )
+      .subscribe();
 
-  // DELETE
-  const deleteTask = async (id) => {
-    await supabase.from("tasks").delete().eq("id", id);
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
-    setTasks(tasks.filter((t) => t.id !== id));
-  };
-
+  // -----------------------------
+  // UI
+  // -----------------------------
   return (
-    <main className="container">
-      <h1>My To-Do List</h1>
+    <div style={{ padding: "20px" }}>
+      <h1>My Tasks</h1>
 
-      <div className="input-row">
-  <input
-    value={task}
-    onChange={(e) => setTask(e.target.value)}
-    placeholder="Enter a task..."
-  />
+      {/* ADD TASK FORM */}
+      <form onSubmit={addTask} style={{ marginBottom: "20px" }}>
+        <input
+          value={task}
+          onChange={(e) => setTask(e.target.value)}
+          placeholder="Enter a task"
+          style={{ padding: "8px", marginRight: "10px" }}
+        />
+        <button type="submit" disabled={loading}>
+          {loading ? "Adding..." : "Add"}
+        </button>
+      </form>
 
-  <input
-    type="datetime-local"
-    value={dueDateTime}
-    onChange={(e) => setDueDateTime(e.target.value)}
-  />
-
-  <button onClick={addTask}>Add</button>
-  {showNotifButton && (
-  <button onClick={enableNotifications}>
-    Enable Notifications
-  </button>
-)}
-
-</div>
-
+      {/* TASK LIST */}
       <ul>
         {tasks.map((t) => (
-         <li key={t.id}>
-  <span
-    onClick={() => toggleTask(t.id, t.completed)}
-    className={t.completed ? "completed" : ""}
-  >
-    {t.text}
-  </span>
+          <li
+            key={t.id}
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              marginBottom: "10px",
+            }}
+          >
+            <span>{t.title}</span>
 
-  {t.due_datetime && (
-    <small style={{ marginLeft: "10px", opacity: 0.6 }}>
-      due: {new Date(t.due_datetime).toLocaleString()}
-    </small>
-  )}
-
-  <button onClick={() => deleteTask(t.id)}>X</button>
-</li>
+            <button onClick={() => deleteTask(t.id)}>
+              Delete
+            </button>
+          </li>
         ))}
       </ul>
-    </main>
+    </div>
   );
 }

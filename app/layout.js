@@ -1,5 +1,6 @@
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Geist, Geist_Mono } from "next/font/google";
+import { Toaster } from "react-hot-toast";
 import PWARegister from "./PWARegister";
 
 const geistSans = Geist({
@@ -13,10 +14,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "To Do App",
-  description: "PWA To Do List",
+  title: "Link Board",
+  description: "A simple link and task manager app",
   manifest: "/manifest.json",
-  themeColor: "#000000",
+  themeColor: "#184d26",
 };
 
 export const viewport = {
@@ -26,9 +27,14 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body>{
-      children}
-      <PWARegister />
+      <body>
+        {children}
+
+        {/* 🔔 Toast notifications */}
+        <Toaster position="top-right" />
+
+        {/* ⚡ Optional service worker register (safe even if empty) */}
+        <PWARegister />
       </body>
     </html>
   );
