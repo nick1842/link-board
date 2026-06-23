@@ -19,16 +19,24 @@ export default function Home() {
 
   // ADD TASK
   const addTask = async () => {
-    if (!task.trim()) return;
+  if (!task.trim()) return;
 
-    const { data } = await supabase
-      .from("tasks")
-      .insert([{ text: task, completed: false }])
-      .select();
+  const { data, error } = await supabase
+    .from("tasks")
+    .insert([{ text: task, completed: false }])
+    .select();
 
+  if (error) {
+    console.log("Insert error:", error);
+    return;
+  }
+
+  if (data && data.length > 0) {
     setTasks([...tasks, data[0]]);
-    setTask("");
-  };
+  }
+
+  setTask("");
+};
 
   // TOGGLE COMPLETE
   const toggleTask = async (id, current) => {
