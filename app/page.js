@@ -7,18 +7,19 @@ export default function Home() {
   const [tasks, setTasks] = useState([]);
 
   const addTask = () => {
-    if (task.trim() === "") return;
+  if (task.trim() === "") return;
 
-    setTasks([
-      ...tasks,
-      {
-        id: Date.now(),
-        text: task,
-      },
-    ]);
+  setTasks([
+    ...tasks,
+    {
+      id: Date.now(),
+      text: task,
+      completed: false, // <-- ADD THIS
+    },
+  ]);
 
-    setTask("");
-  };
+  setTask("");
+};
 
   return (
     <main className="container">
