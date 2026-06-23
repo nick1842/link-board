@@ -1,5 +1,6 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import PWARegister from "./PWARegister";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -12,9 +13,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "DO IT NOWWWWW",
-  description: "Photos, memories, links, and notifications",
+  title: "To Do App",
+  description: "PWA To Do List",
   manifest: "/manifest.json",
+  themeColor: "#000000",
 };
 
 export const viewport = {
@@ -24,7 +26,10 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body>{children}</body>
+      <body>{
+      children}
+      <PWARegister />
+      </body>
     </html>
   );
 }
