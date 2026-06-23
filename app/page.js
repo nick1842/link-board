@@ -8,6 +8,7 @@ export default function Home() {
   const [tasks, setTasks] = useState([]);
   const [dueDate, setDueDate] = useState("");
   const [dueDateTime, setDueDateTime] = useState("");
+  const [showNotifButton, setShowNotifButton] = useState(true);
 
   // LOAD TASKS
   const fetchTasks = async () => {
@@ -81,6 +82,7 @@ const checkDueTasks = (tasks) => {
 const enableNotifications = async () => {
   if (!("Notification" in window)) {
     alert("Your browser does not support notifications");
+    setShowNotifButton(false);
     return;
   }
 
@@ -89,8 +91,11 @@ const enableNotifications = async () => {
   if (permission === "granted") {
     alert("Notifications enabled!");
   } else {
-    alert("Notifications blocked");
+    alert("Notifications disabled");
   }
+
+  // 👇 hide button no matter what
+  setShowNotifButton(false);
 };
 
   // TOGGLE COMPLETE
@@ -135,9 +140,7 @@ const enableNotifications = async () => {
   <button onClick={enableNotifications}>
   Enable Notifications
 </button>
-<button onClick={enableNotifications}>
-  🔔 Enable Reminders
-</button>
+
 </div>
 
       <ul>
