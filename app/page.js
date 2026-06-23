@@ -7,6 +7,7 @@ export default function Home() {
   const [task, setTask] = useState("");
   const [tasks, setTasks] = useState([]);
   const [dueDate, setDueDate] = useState("");
+  const [dueDateTime, setDueDateTime] = useState("");
 
   // LOAD TASKS
   const fetchTasks = async () => {
@@ -19,7 +20,7 @@ export default function Home() {
   }, []);
 
   // ADD TASK
-  const addTask = async () => {
+ const addTask = async () => {
   if (!task.trim()) return;
 
   const { data, error } = await supabase
@@ -28,7 +29,7 @@ export default function Home() {
       {
         text: task,
         completed: false,
-        due_date: dueDate || null,
+        due_datetime: dueDateTime || null,
       },
     ])
     .select();
@@ -40,9 +41,8 @@ export default function Home() {
 
   setTasks([...tasks, data[0]]);
   setTask("");
-  setDueDate("");
+  setDueDateTime("");
 };
-
   // TOGGLE COMPLETE
   const toggleTask = async (id, current) => {
     await supabase
@@ -76,9 +76,9 @@ export default function Home() {
   />
 
   <input
-    type="date"
-    value={dueDate}
-    onChange={(e) => setDueDate(e.target.value)}
+    type="datetime-local"
+    value={dueDateTime}
+    onChange={(e) => setDueDateTime(e.target.value)}
   />
 
   <button onClick={addTask}>Add</button>
@@ -94,9 +94,9 @@ export default function Home() {
     {t.text}
   </span>
 
-  {t.due_date && (
+  {t.due_datetime && (
     <small style={{ marginLeft: "10px", opacity: 0.6 }}>
-      due: {t.due_date}
+      due: {new Date(t.due_datetime).toLocaleString()}
     </small>
   )}
 
