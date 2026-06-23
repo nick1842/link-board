@@ -78,26 +78,28 @@ const checkDueTasks = (tasks) => {
     }
   });
 };
-
+{showNotifButton && (
+  <button onClick={enableNotifications}>
+    🔔 Enable Notifications
+  </button>
+)}
 const enableNotifications = async () => {
   if (!("Notification" in window)) {
-    alert("Your browser does not support notifications");
+    alert("Not supported");
     setShowNotifButton(false);
     return;
   }
 
   const permission = await Notification.requestPermission();
 
+  setShowNotifButton(false); // 👈 ALWAYS runs
+
   if (permission === "granted") {
     alert("Notifications enabled!");
   } else {
-    alert("Notifications disabled");
+    alert("Notifications blocked");
   }
-
-  // 👇 hide button no matter what
-  setShowNotifButton(false);
 };
-
   // TOGGLE COMPLETE
   const toggleTask = async (id, current) => {
     await supabase
