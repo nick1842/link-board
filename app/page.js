@@ -71,7 +71,7 @@ const checkDueTasks = (tasks) => {
     // if task is due right now or overdue
     if (dueTime <= now) {
       if (Notification.permission === "granted") {
-        new Notification("Task Due!", {
+        new Notification("Lock in🔒", {
           body: task.text,
         });
       }
@@ -92,7 +92,7 @@ const enableNotifications = async () => {
 
   const permission = await Notification.requestPermission();
 
-  setShowNotifButton(false); // 👈 ALWAYS runs
+  setShowNotifButton(false);
 
   if (permission === "granted") {
     alert("Notifications enabled!");
@@ -139,9 +139,11 @@ const enableNotifications = async () => {
   />
 
   <button onClick={addTask}>Add</button>
+  {showNotifButton && (
   <button onClick={enableNotifications}>
-  Enable Notifications
-</button>
+    Enable Notifications
+  </button>
+)}
 
 </div>
 
