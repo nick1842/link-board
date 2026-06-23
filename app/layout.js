@@ -12,7 +12,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Our Website",
+  title: "DO IT NOWWWWW",
   description: "Photos, memories, links, and notifications",
   manifest: "/manifest.json",
 };
