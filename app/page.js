@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 export default function Home() {
   const [task, setTask] = useState("");
   const [tasks, setTasks] = useState([]);
+  const [dueDate, setDueDate] = useState("");
 
   // LOAD TASKS
   const fetchTasks = async () => {
@@ -23,19 +24,23 @@ export default function Home() {
 
   const { data, error } = await supabase
     .from("tasks")
-    .insert([{ text: task, completed: false }])
+    .insert([
+      {
+        text: task,
+        completed: false,
+        due_date: dueDate || null,
+      },
+    ])
     .select();
 
   if (error) {
-    console.log("Insert error:", error);
+    console.log(error);
     return;
   }
 
-  if (data && data.length > 0) {
-    setTasks([...tasks, data[0]]);
-  }
-
+  setTasks([...tasks, data[0]]);
   setTask("");
+  setDueDate("");
 };
 
   // TOGGLE COMPLETE
@@ -64,29 +69,39 @@ export default function Home() {
       <h1>My To-Do List</h1>
 
       <div className="input-row">
-        <input
-          value={task}
-          onChange={(e) => setTask(e.target.value)}
-          placeholder="Enter a task..."
-        />
+  <input
+    value={task}
+    onChange={(e) => setTask(e.target.value)}
+    placeholder="Enter a task..."
+  />
 
-        <button onClick={addTask}>Add</button>
-      </div>
+  <input
+    type="date"
+    value={dueDate}
+    onChange={(e) => setDueDate(e.target.value)}
+  />
+
+  <button onClick={addTask}>Add</button>
+</div>
 
       <ul>
         {tasks.map((t) => (
-          <li key={t.id}>
-            <span
-              onClick={() => toggleTask(t.id, t.completed)}
-              className={t.completed ? "completed" : ""}
-            >
-              {t.text}
-            </span>
+         <li key={t.id}>
+  <span
+    onClick={() => toggleTask(t.id, t.completed)}
+    className={t.completed ? "completed" : ""}
+  >
+    {t.text}
+  </span>
 
-            <button onClick={() => deleteTask(t.id)}>
-              X
-            </button>
-          </li>
+  {t.due_date && (
+    <small style={{ marginLeft: "10px", opacity: 0.6 }}>
+      due: {t.due_date}
+    </small>
+  )}
+
+  <button onClick={() => deleteTask(t.id)}>X</button>
+</li>
         ))}
       </ul>
     </main>
