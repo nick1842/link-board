@@ -11,9 +11,28 @@ export default function Home() {
 
   // LOAD TASKS
   const fetchTasks = async () => {
-    const { data } = await supabase.from("tasks").select("*").order("id");
-    setTasks(data || []);
-  };
+  const { data } = await supabase
+    .from("tasks")
+    .select("*")
+    .order("id");
+
+  const loadedTasks = data || [];
+  setTasks(loadedTasks);
+
+  checkDueTasks(loadedTasks);
+};
+
+useEffect(() => {
+  if (tasks.length > 0) {
+    checkDueTasks(tasks);
+  }
+}, [tasks]);
+
+  useEffect(() => {
+  if ("Notification" in window && Notification.permission !== "granted") {
+    Notification.requestPermission();
+  }
+}, []);
 
   useEffect(() => {
     fetchTasks();
@@ -43,6 +62,26 @@ export default function Home() {
   setTask("");
   setDueDateTime("");
 };
+
+const checkDueTasks = (tasks) => {
+  const now = new Date();
+
+  tasks.forEach((task) => {
+    if (!task.due_datetime || task.completed) return;
+
+    const dueTime = new Date(task.due_datetime);
+
+    // if task is due right now or overdue
+    if (dueTime <= now) {
+      if (Notification.permission === "granted") {
+        new Notification("Task Due!", {
+          body: task.text,
+        });
+      }
+    }
+  });
+};
+
   // TOGGLE COMPLETE
   const toggleTask = async (id, current) => {
     await supabase
