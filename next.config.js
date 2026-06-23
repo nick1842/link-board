@@ -8,6 +8,14 @@ const withPWA = require("next-pwa")({
   skipWaiting: true,
 });
 
+const nextConfig = {
+  webpack(config) {
+    return config;
+  },
+};
+
+module.exports = nextConfig;
+
 module.exports = withPWA({
   reactStrictMode: true,
 
