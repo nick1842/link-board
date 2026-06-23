@@ -28,11 +28,7 @@ useEffect(() => {
   }
 }, [tasks]);
 
-  useEffect(() => {
-  if ("Notification" in window && Notification.permission !== "granted") {
-    Notification.requestPermission();
-  }
-}, []);
+  
 
   useEffect(() => {
     fetchTasks();
@@ -82,6 +78,21 @@ const checkDueTasks = (tasks) => {
   });
 };
 
+const enableNotifications = async () => {
+  if (!("Notification" in window)) {
+    alert("Your browser does not support notifications");
+    return;
+  }
+
+  const permission = await Notification.requestPermission();
+
+  if (permission === "granted") {
+    alert("Notifications enabled!");
+  } else {
+    alert("Notifications blocked");
+  }
+};
+
   // TOGGLE COMPLETE
   const toggleTask = async (id, current) => {
     await supabase
@@ -121,6 +132,9 @@ const checkDueTasks = (tasks) => {
   />
 
   <button onClick={addTask}>Add</button>
+  <button onClick={enableNotifications}>
+  Enable Notifications
+</button>
 </div>
 
       <ul>
