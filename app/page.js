@@ -135,6 +135,9 @@ const enableNotifications = async () => {
   <button onClick={enableNotifications}>
   Enable Notifications
 </button>
+<button onClick={enableNotifications}>
+  🔔 Enable Reminders
+</button>
 </div>
 
       <ul>
