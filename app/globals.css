@@ -45,3 +45,17 @@ li {
   text-decoration: line-through;
   opacity: 0.5;
 }
+li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+button {
+  background: red;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}

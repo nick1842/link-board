@@ -38,20 +38,31 @@ export default function Home() {
 
       <ul>
   {tasks.map((t) => (
-    <li
-      key={t.id}
-      onClick={() => {
-        setTasks(
-          tasks.map((task) =>
-            task.id === t.id
-              ? { ...task, completed: !task.completed }
-              : task
-          )
-        );
-      }}
-      className={t.completed ? "completed" : ""}
-    >
-      {t.text}
+    <li key={t.id}>
+      <span
+        onClick={() => {
+          setTasks((prev) =>
+            prev.map((task) =>
+              task.id === t.id
+                ? { ...task, completed: !task.completed }
+                : task
+            )
+          );
+        }}
+        className={t.completed ? "completed" : ""}
+      >
+        {t.text}
+      </span>
+
+      <button
+        onClick={() => {
+          setTasks((prev) =>
+            prev.filter((task) => task.id !== t.id)
+          );
+        }}
+      >
+        X
+      </button>
     </li>
   ))}
 </ul>
